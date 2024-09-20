@@ -1,3 +1,5 @@
+# Computação Gráfica
+
 - 01_PrimeiraEntrega: 4 exercícios introdutórios da disciplina
   - ex01: Escreva um programa que imprima um ponto azul de tamanho 5.0 na posição em que houver um clique de botão esquerdo do mouse. Inicialmente, o ponto deve ficar nas coordenadas (0,0). (Este exercício será fundamental para aprender: (a) a ajustar as coordenadas do mouse e da janela; (b) a desenhar o ponto na função correta; (c) a guardar as coordenadas lidas).
   - ex02: Escreva um programa que realize duas funções: a de imprimir o ponto nas coordenadas do mouse do exercício 1 e de alterar a cor do ponto. Novamente, o ponto inicial é azul e está nas coordenadas (0,0). Para mudar a cor, o usuário digitará as teclas de 0 a 9. Cada tecla deverá ter cores indexadas previamente escolhidas. Escolha as cores que desejar.

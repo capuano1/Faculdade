@@ -1,3 +1,5 @@
+# Algoritmos e Estruturas de Dados I
+
 - 01_Registro: Usando como base o código dado pela professora, com as funções insereAluno e listaAluno, criamos as funções removeAluno e buscaAluno. É um sistema em que podemos gerenciar alunos em uma sala de aula.
 - 02_Ponteiros: 5 exercícios de uma lista de ponteiros:
   - ex17: Escreva uma função que dado um número real passado como parâmetro, retorne a parte inteira e a parte fracionária deste numero. Escreva um programa que chame esta função.

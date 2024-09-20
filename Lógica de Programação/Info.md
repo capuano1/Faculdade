@@ -1,3 +1,5 @@
+# Lógica de Programação
+
 - 01_PrimeiraAulaC: Primeira aula em C, realiza a soma de dois números  
 - 02_Semana05Ex04: Verifica se a letra informada é vogal ou consoante  
 - 03_Ex11Decisao: Recebe um salário e calcula seu aumento em porcentagem, dependendo do valor salarial  
