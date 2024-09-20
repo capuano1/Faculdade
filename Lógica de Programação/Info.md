@@ -30,3 +30,11 @@
   - ex07. Recebe a idade e altura de 5 pessoas em 2 vetores, imprime a idade e altura de cada pessoa  
   - ex08. Recebe 10 valores e retorna a soma do quadrado dos termos do vetor  
   - ex09. Recebe até 50 notas e imprime as notas lidas em ordem, ordem reversa, soma das notas, média das notas, notas cima da média (7) e notas abaixo da média  
+- 08_JogoVelha: Jogo da velha
+- 09_ListaMatrizes: 4 exercícios de uma lista de matrizes
+  - ex04. Gera e imprime uma matriz identidade 5x5
+  - ex05. Gera uma matriz 6x6 e a preenche com valores aleatórios entre 0 e 25. Imprime quantos valores da matriz são maiores do que 10
+  - ex06. Gera uma matriz 20x20 e a preenche com valores aleatórios entre 0 e 100. Recebe um valor e imprime todas as ocorrências deste valor na matriz (se houver) e, ao final, quantas ao todo foram encontradas
+  - ex07. Gera uma matriz 8x8 e a preenche com valores aleatórios entre 0 e 100. Altera a matriz para torná-la uma matriz triangular inferior e a imprime
+- 10_Strings: Recebe uma frase base, uma palavra desta frase para trocar e a palavra nova a ser inserida. Imprime o novo texto com a palavra substituida.
+- 11_Struct: Adicionar a função remover aluno no código providenciado pela Professora. Exercício de struct com um sistema que permite criar uma sala de aula com até 50 alunos. O sistema permite adicionar, remover, buscar e listar os alunos.
