@@ -2,7 +2,8 @@ Na disciplina de Sistemas Operacionais, tivemos 2 trabalhos que contaram com imp
 - Arthur Losano de Araujo Silva
 - Evandro Keiji Kayano
 - Lucas Apolinário de Oliveira
-- Thiago Corso Capuano  
-Trabalhos (com relatório):
+- Thiago Corso Capuano<br>
+<div align="left">Trabalhos (com relatório):</div>
+
 - 01_TrabShell: Implementar um interpretador de comandos em terminal para Linux (shell)
 - 02_TrabEscalonamentoMINIX: Implementar e avaliar algoritmos de escalonamento no Sistema Operacional MINIX3
