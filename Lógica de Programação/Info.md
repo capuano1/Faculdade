@@ -1,32 +1,32 @@
-01_PrimeiraAulaC: Primeira aula em C, realiza a soma de dois números  
-02_Semana05Ex04: Verifica se a letra informada é vogal ou consoante  
-03_Ex11Decisao: Recebe um salário e calcula seu aumento em porcentagem, dependendo do valor salarial  
-04_ListaProva: 4 exercícios de uma lista de prova:  
-  ex01. Recebe um número e imprime seu antecessor  
-  ex02. Calcula a área de um retângulo  
-  ex03. Calcula (aproximadamente) a idade, em dias, de uma pessoa  
-  ex04. Recebe um salário e uma porcetagem de aumento, imprime o novo salário após o aumento  
-05_PropostaRepeticao: 8 exercícios de uma lista de "Estrutura de Repetição":  
-  ex01. Recebe uma nota e apenas a imprime quando ela for válida (entre 0 e 10)  
-  ex06. Imprime de 1 a 20, com os números um abaixo do outro ou um ao lado do outro  
-  ex09. Imprime todos os ímpares entre 0 e 50  
-  ex10. Imprime todos os números inteiros no intervalo entre os dois números informados  
-  ex11. Imprime a soma de todos os números inteiros no intervalo entre os dois números informados  
-  ex12. Imprime a tabuada até 10 do número informado  
-  ex18. Recebe uma sequência de números e imprime o maior número, menor número e a soma de todos os valores  
-  ex25. Recebe a idade de várias pessoas entrevistadas e imprime se é, em média, um público jovem, adulto ou idoso  
-06_ExsSemana09Repeticao: 4 exercícios de uma lista de "Estrutura de Repetição"  
-  ex14. Recebe 10 números e imprime quantos destes são pares e quantos são ímpares  
-  ex16. Imprime a sequência de Fibonacci até o último valor menor do que 500  
-  ex17. Recebe um valor e imprime seu fatorial  
-  ex21. Recebe um valor positivo e maior do que 1 e imprime se é primo ou não  
-07_ExerciciosVetores: x exercícios usando vetores (arrays):  
-  ex01. Calcula a soma de todos os valores de um vetor R informado, o mesmo para um vetor S informado, cria um vetor X com a soma dos valores de R e S e um vetor Y com a multiplicação dos valores de R e S. Imprime todas as informações.  
-  ex02. Recebe os 5 valores de um vetor e imprime-o  
-  ex03. Recebe os 10 valores de um vetor e imprime-o de trás para frente  
-  ex04. Recebe 4 notas em um vetor, calcula sua média e imprime as notas e sua média  
-  ex05. Recebe 10 caracteres e imprime quantas consoantes foram identificadas  
-  ex06. Recebe 5 valores em um vetor, imprime o vetor, a soma de seus valores e a multiplicação de seus valores  
-  ex07. Recebe a idade e altura de 5 pessoas em 2 vetores, imprime a idade e altura de cada pessoa  
-  ex08. Recebe 10 valores e retorna a soma do quadrado dos termos do vetor  
-  ex09. Recebe até 50 notas e imprime as notas lidas em ordem, ordem reversa, soma das notas, média das notas, notas cima da média (7) e notas abaixo da média  
+- 01_PrimeiraAulaC: Primeira aula em C, realiza a soma de dois números  
+- 02_Semana05Ex04: Verifica se a letra informada é vogal ou consoante  
+- 03_Ex11Decisao: Recebe um salário e calcula seu aumento em porcentagem, dependendo do valor salarial  
+- 04_ListaProva: 4 exercícios de uma lista de prova:  
+  - ex01. Recebe um número e imprime seu antecessor  
+  - ex02. Calcula a área de um retângulo  
+  - ex03. Calcula (aproximadamente) a idade, em dias, de uma pessoa  
+  - ex04. Recebe um salário e uma porcetagem de aumento, imprime o novo salário após o aumento  
+- 05_PropostaRepeticao: 8 exercícios de uma lista de "Estrutura de Repetição":  
+  - ex01. Recebe uma nota e apenas a imprime quando ela for válida (entre 0 e 10)  
+  - ex06. Imprime de 1 a 20, com os números um abaixo do outro ou um ao lado do outro  
+  - ex09. Imprime todos os ímpares entre 0 e 50  
+  - ex10. Imprime todos os números inteiros no intervalo entre os dois números informados  
+  - ex11. Imprime a soma de todos os números inteiros no intervalo entre os dois números informados  
+  - ex12. Imprime a tabuada até 10 do número informado  
+  - ex18. Recebe uma sequência de números e imprime o maior número, menor número e a soma de todos os valores  
+  - ex25. Recebe a idade de várias pessoas entrevistadas e imprime se é, em média, um público jovem, adulto ou idoso  
+- 06_ExsSemana09Repeticao: 4 exercícios de uma lista de "Estrutura de Repetição"  
+  - ex14. Recebe 10 números e imprime quantos destes são pares e quantos são ímpares  
+  - ex16. Imprime a sequência de Fibonacci até o último valor menor do que 500  
+  - ex17. Recebe um valor e imprime seu fatorial  
+  - ex21. Recebe um valor positivo e maior do que 1 e imprime se é primo ou não  
+- 07_ExerciciosVetores: x exercícios usando vetores (arrays):  
+  - ex01. Calcula a soma de todos os valores de um vetor R informado, o mesmo para um vetor S informado, cria um vetor X com a soma dos valores de R e S e um vetor Y com a multiplicação dos valores de R e S. Imprime todas as informações.  
+  - ex02. Recebe os 5 valores de um vetor e imprime-o  
+  - ex03. Recebe os 10 valores de um vetor e imprime-o de trás para frente  
+  - ex04. Recebe 4 notas em um vetor, calcula sua média e imprime as notas e sua média  
+  - ex05. Recebe 10 caracteres e imprime quantas consoantes foram identificadas  
+  - ex06. Recebe 5 valores em um vetor, imprime o vetor, a soma de seus valores e a multiplicação de seus valores  
+  - ex07. Recebe a idade e altura de 5 pessoas em 2 vetores, imprime a idade e altura de cada pessoa  
+  - ex08. Recebe 10 valores e retorna a soma do quadrado dos termos do vetor  
+  - ex09. Recebe até 50 notas e imprime as notas lidas em ordem, ordem reversa, soma das notas, média das notas, notas cima da média (7) e notas abaixo da média  
