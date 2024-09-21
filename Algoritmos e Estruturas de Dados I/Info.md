@@ -14,8 +14,10 @@
   - ex05: Criar um tipo abstrato de dados que represente uma pessoa, contendo nome, data de nascimento e CPF. Crie uma variável que é um ponteiro para este TAD (no programa principal). Depois crie uma função que receba este ponteiro e preencha os dados da estrutura e também uma uma função que receba este ponteiro e imprima os dados da estrutura. Finalmente, faça a chamada a esta função na função principal.
 - 04_ListaLinearSE: Exercício sobre Lista Linear Sequencial Estática. Usando o código base da professora, implementamos as funções adicionaNaPosição, retiraDaPosição e retiraEspecífico.
 - 05_ListaLinearED: Exercício sobre Lista Linear Encadeada Dinâmica. Usando o código base da professora, implementamos as funções adicionaNaPosição, retiraDaPosição e retiraEspecífico.
-- 06_ArvoreGenerica: Implementar a impressão da árvore por parênteses aninhados
-- 07_Prova2: Exercícios do Beecrowd que contaram como a nossa P2:
+- 06_FilaComPrioridade: Gerador de senhas (igual as senhas de hospital) - Normal e prioridade, utilizando uma única fila. No programa principal, simular a chegada dos pacientes e a geração das senhas.
+- 07_TorreDeHanoi: Implementação de um programa que avalia o resultado de uma sequência de movimentos em uma Torre de Hanoi. Número N de discos, número M de jogadas e a inserção de M jogadas, com pino de origem e pino de destino (3 pinos no jogo).
+- 08_ArvoreGenerica: Implementar a impressão da árvore por parênteses aninhados
+- 09_Prova2: Exercícios do Beecrowd que contaram como a nossa P2:
   - [1194](https://judge.beecrowd.com/en/problems/view/1194): Dadas as representações prefixas e infixas de uma árvore binária, compute sua representação posfixa.
   - [1195](https://judge.beecrowd.com/en/problems/view/1195): Dados x números de casos, y números em cada caso, monte as árvores de busca binárias equivalentes para cada caso e imprima a representação prefixa, infixa e posfixa.
   - [1200](https://judge.beecrowd.com/en/problems/view/1200): Monte um programa capaz de inserir letras em uma árvore de busca binária, checar se certas letras existem na árvore e imprimí-la em sua representação prefixa, infixa ou posfixa.
