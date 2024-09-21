@@ -43,18 +43,6 @@ Observação 2: Coloquei apenas os projetos que continham como resposta arquivos
     - Ex3b: L2 = {w | w contém no mínimo três ocorrências de a ou no mínimo três ocorrências de b ou no mínimo três ocorrências de c}
     - Ex3c: L3 = {w | w começa com abc e termina com bca}
     - Ex3d: L4 = {w | |w| > 1 e os a's (se houver) precedem os b’s e b's (se houver) precedem os c’s}
-- Projeto06: Criar as expressões regulares que reconhecem as linguagens definidas:
-  1. Criar expressões regulares (RE) para as linguagens formada por 0’s e 1’s.
-    - A: {w | w contém um único 1}
-    - B: {w | w contém pelo menos um 1}
-    - C: {w | w contém a string 001 como substring}
-    - D: {w | |w| é par}
-    - E: {w | |w| é múltiplo de 3}
-    - F: {w | 6° símbolo da direita para a esquerda é igual a 1}
-  2. Dado alfabeto {a, b, c} apresente a RE que represente todas as strings com ao menos 1 a e ao menos 1b.
-  3. Dado alfabeto binário, apresente a RE que represente todas as strings onde todo par de zeros adjacentes aparecem antes de qualquer par de 1’s adjacentes.
-  4. Dado alfabeto binário, apresente a RE que represente o conjunto de strings que não contém 101.
-  5. Dado alfabeto binário, apresente a RE que represente as strings com no máximo um par de 0’s consecutivos ou um par de 1’s consecutivos.
 - Projeto06 - Extra:
   1. Forneça expressões regulares que denotem as seguintes linguagens:
     - A: {w ∈ {a,b}* | |w| >= 3}
