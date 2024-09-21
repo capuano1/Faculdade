@@ -1,0 +1,22 @@
+# Projeto Orientado a Objetos
+
+- 01_SOLID: Programa simples mostrando a aplicação dos 5 princípios SOLID. Feito em dupla, com Evandro Keiji Kayano
+- 02_Facade: Implementar o Facade do exemplo em UML apresentado, de um site de compras.
+- 03_Composite:
+  - ex3.1: Um congresso inscreve participantes, que podem ser indivíduos ou uma instituição (composta por indivíduos). Implemente uma solução para este caso.
+  - ex3.2: Escreva uma interface Publicação que trate de forma equivalente coleções (compostas de outras publicações, como revistas, jornais, cadernos) e artigos individuais indivisíveis. Teste o programa.
+- 04_Bridge: Implementação do padrão Bridge conforme problema apresentado pelo professor.
+- 05_Singleton: Transforme o Facade do exercício anterior sobre o padrão em um Singleton.
+- 06_Mediator: Implemente um Mediator em um exercício anterior sobre o padrão Observer.
+- 07_Proxy: Um objeto ImageIconProxy aceita três chamadas de display que precisa passar à imagem atual. Escreva o código para os 3 métodos incompletos, conforme passado pelo professor
+- 08_ChainOfResponsibility: Escreva uma aplicação que receba um texto ou arquivo de texto da linha de comando. O texto deve ser lido e estatísticas devem ser impressas sobre o número de espaços encontrados, o número de letras 'a' e o número de pontos. Use Chain of Responsibility e faça com que cada tipo de caractere seja tratado por um elo diferente da corrente.
+- 09_TrabalhoBiblioteca: Desenvolver um sistema de gerenciamento de biblioteca que permitirá aos usuários (estudantes e funcionários) realizar operações essenciais como busca de livros, empréstimo de livros, devolução de livros e consulta de informações detalhadas sobre livros e usuários. O sistema deve incorporar diversas técnicas e padrões de projeto discutidas em sala de aula, como os princípios SOLID. Feito em dupla, com Evandro Keiji Kayano.
+- 10_Flyweight: Implementação que imprima aleatoriamente 10 números de 10 algarismos. Cada algarismo deve ser uma instancia do objeto Algarismo que possui o numero 1, 2, 3, etc. como membro imutável. Use Flyweight para que objetos que representam o mesmo algarismo sejam reutilizados.
+- 11_Builder: Uma aplicação precisa construir objetos Pessoa e Empresa. Para isto, precisa ler dados de um banco para cada produto. Para construir uma Pessoa é preciso obter nome e identidade. Apenas se os dois forem lidos a pessoa pode ser criada Para construir uma empresa é preciso ler o nome e identidade do responsavel e depois construir a pessoa do responsável. Implemente a aplicação.
+- 12_FactoryMethod: Implemente a aplicação apresentada pelo professor em formato UML utilizando o Factory Method. Crie um objeto construtor para cada tipo de objeto e crie uma fachada contendo um HashMap, onde os construtores são guardados, e um método estático que permita selecionar o construtor desejado (ou embuta o Factory Method neste método) com base em uma chave.
+- 13_AbstractFactory: Implemente uma aplicação que constrói Pontos (x, y), Circulos (Ponto, raio), Retangulos (Ponto, Ponto), Triangulos (Ponto, Ponto, Ponto) e use uma fábrica abstrata para controlar a criação de todos os objetos
+- 14_Prototype: Implemente, na fábrica de Figuras (exercício sobre Factory Method), métodos createXXX() que aceitem um objeto como argumento e retornem um clone
+- 15_State: Implemente um sistema de semáforo, em que o semáforo pode mudar de estado entre Verde, Amarelo e Vermelho e podemos verificar qual é a cor dele. Além disto, descubra um padrão de projeto que possa resolver um problema comum nos padrões State e Strategy, de um estado ou estratégia inexistente, e implemente-o (Null Object pattern).
+- 16_Strategy: Escreva um programa que descubra o dia da semana e repasse o controle para uma estratégia específica. O programa deve imprimir uma mensagem, dependendo do dia da semana.
+- 17_Iterator: Escreva um type-safe iterator para objetos da hierarquia de Figuras (Circulos, Retângulos, etc.). Objetos retornados pelo iterator devem ser do tipo Figura. Implemente o Iterator na ListaDeFiguras (use internamente o List.iterator). Use um método iterator() e esconda a implementaçao em uma classe interna. Use next() e hasNext() para navegar.
+- 18_Visitor: Refatorar a hierarquia passada pelo professor, para que seja capaz de usar Visitor. É uma hierarquia simples, com interface Operação e duas classes que a implementam: Adicao e Multiplicacao.
