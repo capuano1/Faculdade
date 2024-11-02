@@ -1,0 +1,4 @@
+Measure-Command {start-process pcd-openMP -Wait}
+Measure-Command {start-process pcd-pthreads.exe -Wait}
+gcc pcd-pthreads.c pthread.h -o pcd-pthreads
+gcc pcd-openMP.c -o pcd-openMP -fopenmp
