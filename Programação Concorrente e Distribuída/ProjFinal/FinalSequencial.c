@@ -46,7 +46,7 @@ int main() {
         memset(C_new[i], 0, N * sizeof(double));
     }
 
-    printf("Memória alocada e inicializada com sucesso\n");
+    //printf("Memória alocada e inicializada com sucesso\n");
 
     clock_t tempo;
     tempo = clock();
@@ -54,14 +54,14 @@ int main() {
     // Inicializar uma concentração alta no centro
     C[N/2][N/2] = 25.0;
 
-    printf("Concentração inicial no centro configurada\n");
+    //printf("Concentração inicial no centro configurada\n");
 
     // Executar a equação de difusão
     diff_eq(C, C_new);
 
     // Exibir resultado para verificação
-    printf("Concentração final no centro: %f\n", C[N/2][N/2]);
-    printf("Tempo: %f segundos\n", ((double)clock() - tempo)/CLOCKS_PER_SEC);
+    printf("Concentracao final no centro: %f\n", C[N/2][N/2]);
+    
 
     // Liberar a memória alocada
     for (int i = 0; i < N; i++) {
@@ -71,7 +71,9 @@ int main() {
     free(C);
     free(C_new);
 
-    printf("Memória liberada com sucesso\n");
+    printf("Tempo: %f segundos\n", ((double)clock() - tempo)/CLOCKS_PER_SEC);
+
+    //printf("Memória liberada com sucesso\n");
 
     return 0;
 }
