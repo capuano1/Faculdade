@@ -5,7 +5,7 @@
 #include <omp.h>
 
 #define N 1000  // Tamanho da grade
-#define T 1000 // Número de iterações
+int T = 1000; // Número de iterações
 #define D 0.1  // Coeficiente de difusão
 #define DELTA_T 0.01
 #define DELTA_X 1.0
@@ -30,6 +30,7 @@ void diff_eq(double** C, double** C_new) {
 int main() {
     double **C = malloc(N * sizeof(double *));      // Concentração inicial
     double **C_new = malloc(N * sizeof(double *));  // Concentração para a próxima iteração
+    FILE *dados;
     if (C == NULL || C_new == NULL) {
         fprintf(stderr, "Erro ao alocar memória para as linhas\n");
         return 1;
@@ -42,22 +43,28 @@ int main() {
             fprintf(stderr, "Erro ao alocar memória na linha %d\n", i);
             return 1;
         }
-        memset(C[i], 0, N * sizeof(double));
-        memset(C_new[i], 0, N * sizeof(double));
     }
 
-    clock_t tempo;
-    tempo = clock();
+    dados = fopen("FinalSequencial-DadosCompatibilidade.txt", "w");
 
-    // Inicializar uma concentração alta no centro
-    C[N/2][N/2] = 25.0;
+    for (; T < 1100; T++) {
+        // Limpar matrizes
+        for (int i = 0; i < N; i++) {
+            memset(C[i], 0, N * sizeof(double));
+            memset(C_new[i], 0, N * sizeof(double));
+        }
 
-    // Executar a equação de difusão
-    diff_eq(C, C_new);
+        // Inicializar uma concentração alta no centro
+        C[N/2][N/2] = 25.0;
 
-    // Exibir resultado para verificação
-    printf("Concentracao final no centro: %f\n", C[N/2][N/2]);
-    
+        // Executar a equação de difusão
+        diff_eq(C, C_new);
+
+        // Exibir resultado para verificação
+        fprintf(dados, "%f\n", C[N/2][N/2]);
+    }
+
+    fclose(dados);
 
     // Liberar a memória alocada
     for (int i = 0; i < N; i++) {
@@ -66,8 +73,6 @@ int main() {
     }
     free(C);
     free(C_new);
-
-    printf("Tempo: %f segundos\n", ((double)clock() - tempo)/CLOCKS_PER_SEC);
 
     return 0;
 }

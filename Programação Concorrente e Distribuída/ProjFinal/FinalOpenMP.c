@@ -48,15 +48,11 @@ int main() {
         memset(C_new[i], 0, N * sizeof(double));
     }
 
-    //printf("Memória alocada e inicializada com sucesso\n");
-
     clock_t tempo;
     tempo = clock();
 
     // Inicializar uma concentração alta no centro
     C[N/2][N/2] = 25.0;
-
-    //printf("Concentração inicial no centro configurada\n");
 
     // Executar a equação de difusão
     diff_eq(C, C_new);
@@ -73,8 +69,6 @@ int main() {
     free(C_new);
 
     printf("Tempo: %f segundos\n", ((double)clock() - tempo)/CLOCKS_PER_SEC);
-
-    //printf("Memória liberada com sucesso\n");
 
     return 0;
 }
