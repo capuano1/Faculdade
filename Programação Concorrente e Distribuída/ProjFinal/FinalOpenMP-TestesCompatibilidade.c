@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <time.h>
 #include <omp.h>
@@ -20,12 +21,15 @@ void diff_eq(double** C, double** C_new) {
                 );
             }
         }
-        #pragma omp parallel for collapse(2)
+        double difmedio = 0.;
+        #pragma omp parallel for collapse(2) reduction (+:difmedio)
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
+                difmedio += fabs(C_new[i][j] - C[i][j]);
                 C[i][j] = C_new[i][j];
             }
         }
+        if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
     }
 }
 
