@@ -87,9 +87,9 @@ int main() {
     mediaTempo /= 10;
     for (int i = 0; i < 10; i++) {
         desvioPadraoTempo += pow((temposReg[i] - mediaTempo), 2);
-        desvioPadraoTempo /= 10;
-        desvioPadraoTempo = sqrt(desvioPadraoTempo);
     }
+    desvioPadraoTempo /= 10;
+    desvioPadraoTempo = sqrt(desvioPadraoTempo);
 
     //3 comandos em uma linha, servem apenas para registrar os dados em um arquivo.
     tempos = fopen("FinalSequencial-Tempo.txt", "w"); fprintf(tempos, "%f %f", mediaTempo, desvioPadraoTempo); fclose(tempos);
