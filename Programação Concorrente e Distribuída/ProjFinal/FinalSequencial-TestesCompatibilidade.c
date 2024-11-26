@@ -27,7 +27,7 @@ void diff_eq(double** C, double** C_new) {
                 C[i][j] = C_new[i][j];
             }
         }
-        if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
+        //if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
     }
 }
 
@@ -59,7 +59,7 @@ int main() {
         }
 
         // Inicializar uma concentração alta no centro
-        C[N/2][N/2] = 25.0;
+        C[N/2][N/2] = 1.0;
 
         // Executar a equação de difusão
         diff_eq(C, C_new);

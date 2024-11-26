@@ -34,6 +34,7 @@ void diff_eq(double** C, double** C_new) {
 int main() {
     double **C = malloc(N * sizeof(double *));      // Concentração inicial
     double **C_new = malloc(N * sizeof(double *));  // Concentração para a próxima iteração
+    FILE *tempos;
     if (C == NULL || C_new == NULL) {
         fprintf(stderr, "Erro ao alocar memória para as linhas\n");
         return 1;
@@ -54,7 +55,7 @@ int main() {
     tempo = clock();
 
     // Inicializar uma concentração alta no centro
-    C[N/2][N/2] = 25.0;
+    C[N/2][N/2] = 1.0;
 
     // Executar a equação de difusão
     diff_eq(C, C_new);
