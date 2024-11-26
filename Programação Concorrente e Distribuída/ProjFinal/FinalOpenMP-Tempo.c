@@ -57,7 +57,7 @@ int main() {
     clock_t tempo;
     double temposReg[10];
     tempos = fopen("FinalOpenMP-Tempo.txt", "w");
-    for (int k = 1; k <= 16;) {
+    for (int k = 2; k <= 16; k += 2) {
         double mediaTempo = 0, desvioPadraoTempo = 0;
         for (int z = 0; z < 10; z++) {
             t = k;
@@ -89,9 +89,6 @@ int main() {
         desvioPadraoTempo /= 10;
         desvioPadraoTempo = sqrt(desvioPadraoTempo);
         fprintf(tempos, "%f %f\n", mediaTempo, desvioPadraoTempo);
-        //Fazer com que o k seja o num_threads, e teste 1, 2, 4, 6, 8, 10, 12, 14 e 16 threads.
-        if (k == 1) k *= 2;
-        else k += 2;
     }
 
     fclose(tempos);
