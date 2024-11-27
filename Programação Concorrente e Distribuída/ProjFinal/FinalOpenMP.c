@@ -13,7 +13,7 @@
 
 void diff_eq(double** C, double** C_new) {
     for (int t = 0; t < T; t++) {
-        #pragma omp parallel for collapse(2) num_threads(1)
+        #pragma omp parallel for collapse(2) num_threads(2)
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 C_new[i][j] = C[i][j] + D * DELTA_T * (
@@ -22,14 +22,14 @@ void diff_eq(double** C, double** C_new) {
             }
         }
         double difmedio = 0.;
-        #pragma omp parallel for collapse(2) num_threads(1) reduction(+:difmedio)
+        #pragma omp parallel for collapse(2) num_threads(2) reduction(+:difmedio)
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 difmedio += fabs(C_new[i][j] - C[i][j]);
                 C[i][j] = C_new[i][j];
             }
         }
-        if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
+        //if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
     }
 }
 

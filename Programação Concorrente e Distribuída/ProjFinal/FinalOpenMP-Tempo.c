@@ -10,11 +10,10 @@
 #define D 0.1  // Coeficiente de difusão
 #define DELTA_T 0.01
 #define DELTA_X 1.0
-int t = 1;
 
 void diff_eq(double** C, double** C_new) {
     for (int t = 0; t < T; t++) {
-        #pragma omp parallel for collapse(2) num_threads(t)
+        #pragma omp parallel for collapse(2)
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 C_new[i][j] = C[i][j] + D * DELTA_T * (
@@ -23,7 +22,7 @@ void diff_eq(double** C, double** C_new) {
             }
         }
         double difmedio = 0.;
-        #pragma omp parallel for collapse(2) reduction(+:difmedio) num_threads(t)
+        #pragma omp parallel for collapse(2) reduction(+:difmedio)
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 difmedio += fabs(C_new[i][j] - C[i][j]);
@@ -57,10 +56,11 @@ int main() {
     clock_t tempo;
     double temposReg[10];
     tempos = fopen("FinalOpenMP-Tempo.txt", "w");
+    omp_set_dynamic(0);
     for (int k = 2; k <= 16; k += 2) {
+        omp_set_num_threads(k);
         double mediaTempo = 0, desvioPadraoTempo = 0;
         for (int z = 0; z < 10; z++) {
-            t = k;
             tempo = clock();
 
             // Inicializar uma concentração alta no centro
