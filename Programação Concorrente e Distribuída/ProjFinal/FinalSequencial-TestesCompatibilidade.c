@@ -5,8 +5,8 @@
 #include <time.h>
 #include <omp.h>
 
-#define N 1000  // Tamanho da grade
-int T = 1000; // Número de iterações
+#define N 2000  // Tamanho da grade
+int T = 2000; // Número de iterações
 #define D 0.1  // Coeficiente de difusão
 #define DELTA_T 0.01
 #define DELTA_X 1.0
@@ -51,7 +51,7 @@ int main() {
 
     dados = fopen("FinalSequencial-DadosCompatibilidade.txt", "w");
 
-    for (; T < 1100; T++) {
+    for (; T < 2100; T++) {
         // Limpar matrizes
         for (int i = 0; i < N; i++) {
             memset(C[i], 0, N * sizeof(double));

@@ -4,8 +4,8 @@
 #include <string.h>
 #include <time.h>
 
-#define N 1000  // Tamanho da grade
-#define T 1000 // Número de iterações
+#define N 2000  // Tamanho da grade
+#define T 2000 // Número de iterações
 #define D 0.1  // Coeficiente de difusão
 #define DELTA_T 0.01
 #define DELTA_X 1.0
