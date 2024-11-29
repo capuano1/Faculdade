@@ -52,7 +52,7 @@ int main() {
     }
 
     dados = fopen("FinalOpenMP-DadosCompatibilidade.txt", "w");
-
+    omp_set_dynamic(0);
     for (; T < 2100; T++) {
         // Limpar matrizes
         for (int i = 0; i < N; i++) {
