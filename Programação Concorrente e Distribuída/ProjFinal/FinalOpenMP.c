@@ -29,7 +29,7 @@ void diff_eq(double** C, double** C_new) {
                 C[i][j] = C_new[i][j];
             }
         }
-        //if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
+        if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
     }
 }
 
@@ -54,6 +54,7 @@ int main() {
 
     clock_t tempo;
     tempo = clock();
+    omp_set_dynamic(0);
 
     // Inicializar uma concentração alta no centro
     C[N/2][N/2] = 1.0;
