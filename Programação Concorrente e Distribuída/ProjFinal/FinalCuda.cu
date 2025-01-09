@@ -1,3 +1,8 @@
+/*
+ABANDONADO E REESCRITO -> NOVO ARQUIVO: FinalCuda2.cu
+Salvo por motivos de segurança, caso o outro jeito desse errado
+*/
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -20,6 +25,7 @@ __global__ void diff_eq(double* C, double* C_new) {
         }
     }
     __syncthreads();
+    //Separar em dois
     double difmedio = 0.;
     for (int i = 1; i < N - 1; i++) {
         for (int j = 1; j < N - 1; j++) {
@@ -30,6 +36,8 @@ __global__ void diff_eq(double* C, double* C_new) {
     //if ((t%100) == 0) printf("interacao %d - diferenca=%g\n", t, difmedio/((N-2)*(N-2)));
     __syncthreads();
 }
+
+//Melhor a diff_eq ser a funcao que vai, no host, preparar tudo para o device e chamar as duas funcoes do device
 
 int main() {
     double *C = (double*)malloc(N * N * sizeof(double));      // Concentração inicial
