@@ -1,6 +1,3 @@
-// Gabriela Cestari Tuzaki
-// Thiago Corso Capuano
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,16 +95,16 @@ void read(char *fileName) {
         readItem.index -= 1;
 
         // => malloc|realloc to increase array size
-        if (cidades[i].qte == 0) {
-            cidades[i].itens = malloc(sizeof(item));
-            cidades[i].qte++;
+        if (cidades[readItem.indCidade].qte == 0) {
+            cidades[readItem.indCidade].itens = malloc(sizeof(int));
+            cidades[readItem.indCidade].qte++;
         }
         else {
-            cidades[i].qte++;
-            cidades[i].itens = realloc(cidades[i].itens, cidades[i].qte*sizeof(item));
+            cidades[readItem.indCidade].qte++;
+            cidades[readItem.indCidade].itens = realloc(cidades[readItem.indCidade].itens, cidades[readItem.indCidade].qte*sizeof(int));
         }
 
-        cidades[i].itens[i] = readItem.index;
+        cidades[readItem.indCidade].itens[cidades[readItem.indCidade].qte - 1] = readItem.index;
         itens[i] = readItem;
 
         // => check if another item on the same city has a bigger profit than this one
