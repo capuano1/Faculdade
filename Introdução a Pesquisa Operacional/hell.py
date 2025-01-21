@@ -65,9 +65,12 @@ def main():
     kp_footer = ";\nparam capacity := 4029;\nend;"
 
     tsp_data_ampl = []
+    line = ""
     for i in range(len(distances)):
         for j in range(len(distances)):
-            tsp_data_ampl.append(f"{i+1} {j+1} {distances[i][j]}")
+            line = line + str(distances[i][j]) + " "
+        tsp_data_ampl.append(line)
+        line = ""
 
     kp_data_ampl = []
     for line in kp_data:

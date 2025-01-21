@@ -1,0 +1,19 @@
+-> Algoritmos semi-gulosos
+-> Deve sair do 0, ou seja, não vai usar as soluções ótimas nem do TSP nem do KP
+-> A fase construtiva do GRASP deve rodar de trás para frente, vamos ver primeiro as últimas cidades
+sendo visitadas ao invés das primeiras
+-> Isso prioriza os itens mais próximos do final, já que os itens afetam a velocidade
+-> Só o fato de estar priorizando os itens próximos ao final, já faz com que este algoritmo seja
+semi-guloso para o KP
+-> Com relação ao TSP, obviamente, vamos de trás para frente (a fase construtiva faz ambos juntos),
+porém com o alfa que gera a lista de candidatos restritos.
+-> O alfa pode ser um inteiro, por exemplo 3, em que pegamos as 3 cidades mais próximas ao invés
+da cidade mais próxima em si, e escolhemos aleatoriamente uma delas
+-> Colocar ou não o item na mochila? Devemos calcular (benefício/peso) + (n-1). Quanto mais ao final
+a cidade, maior a probabilidade em si. Também é possível transformar o benefício/peso em um valor até
+100% e a cidade em si em outra probabilidade até 100% e multiplicar ambos.
+-> Dessa forma, precisamos saber qual seria o maior benefício/peso para ter um 100%
+-> Professor sugeriu fazer a mediana de benefício/peso e fazer com que ele coloque qualquer valor acima
+-> Nem precisa pensar em probabilidade por conta do algoritmo já ser semi-guloso por estar começando do
+final e priorizando estes itens, sendo capaz dos itens do começo não terem nem chance por conta da mochila
+ficar cheia
