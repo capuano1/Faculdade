@@ -1,0 +1,4 @@
+reset;
+model tsp.mod;
+solve;
+display x;

@@ -59,8 +59,8 @@ def main():
     tsp_data, kp_data = read_ttp_instance(input_file)
     distances = calculate_distances(tsp_data)
 
-    tsp_header = """set N := 1..51;"""
-    tsp_footer = ";\nparam n := 51;\nend;"
+    tsp_header = ""
+    tsp_footer = "end;"
     kp_header = "set ITEMS := 1..50;\nparam profit :=\n"
     kp_footer = ";\nparam capacity := 4029;\nend;"
 
@@ -74,7 +74,7 @@ def main():
     for i in range(len(distances)):
         line = line + str(i+1) + " "
         for j in range(len(distances)):
-            if (i == j): line = line + str(1000) + " "
+            if (i == j): line = line + str(10000000.0) + " "
             else: line = line + str(distances[i][j]) + " "
         tsp_data_ampl.append(line)
         line = ""
