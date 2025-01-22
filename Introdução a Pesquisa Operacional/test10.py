@@ -38,7 +38,7 @@ def calculate_distances(tsp_data):
     for i in range(num_cities):
         for j in range(num_cities):
             if i != j:
-                dist = round(math.sqrt((cities[j][1] - cities[i][1]) ** 2 + (cities[j][2] - cities[i][2]) ** 2), 0)
+                dist = math.ceil(math.sqrt((cities[j][1] - cities[i][1]) ** 2 + (cities[j][2] - cities[i][2]) ** 2))
                 distances[i][j] = dist
                 distances[j][i] = dist
 
@@ -66,14 +66,14 @@ def main():
 
     tsp_data_ampl = []
     line = "param c: "
-    for i in range(len(distances)):
+    for i in range(10):
         line = line + str(i+1) + " "
     line = line + ":="
     tsp_data_ampl.append(line)
     line = ""
-    for i in range(len(distances)):
+    for i in range(10):
         line = line + str(i+1) + " "
-        for j in range(len(distances)):
+        for j in range(10):
             if (i == j): line = line + str(1000) + " "
             else: line = line + str(distances[i][j]) + " "
         tsp_data_ampl.append(line)

@@ -38,7 +38,7 @@ def calculate_distances(tsp_data):
     for i in range(num_cities):
         for j in range(num_cities):
             if i != j:
-                dist = round(math.sqrt((cities[j][1] - cities[i][1]) ** 2 + (cities[j][2] - cities[i][2]) ** 2), 0)
+                dist = math.ceil(math.sqrt((cities[j][1] - cities[i][1]) ** 2 + (cities[j][2] - cities[i][2]) ** 2))
                 distances[i][j] = dist
                 distances[j][i] = dist
 
@@ -59,25 +59,16 @@ def main():
     tsp_data, kp_data = read_ttp_instance(input_file)
     distances = calculate_distances(tsp_data)
 
-    tsp_header = """set N := 1..51;"""
+    tsp_header = "set N := 1..51;\n"
     tsp_footer = ";\nparam n := 51;\nend;"
     kp_header = "set ITEMS := 1..50;\nparam profit :=\n"
     kp_footer = ";\nparam capacity := 4029;\nend;"
 
     tsp_data_ampl = []
-    line = "param c: "
     for i in range(len(distances)):
-        line = line + str(i+1) + " "
-    line = line + ":="
-    tsp_data_ampl.append(line)
-    line = ""
-    for i in range(len(distances)):
-        line = line + str(i+1) + " "
         for j in range(len(distances)):
-            if (i == j): line = line + str(1000) + " "
-            else: line = line + str(distances[i][j]) + " "
-        tsp_data_ampl.append(line)
-        line = ""
+            tsp_data_ampl.append(f"param c[{i}, {j}] = {distances[i][j]};")
+        
 
     kp_data_ampl = []
     for line in kp_data:
