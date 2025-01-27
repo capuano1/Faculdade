@@ -1,0 +1,5 @@
+reset;
+model tsp.mod;
+#expand > tsp51.lp;
+solve;
+display x;
