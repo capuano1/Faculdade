@@ -17,3 +17,8 @@ a cidade, maior a probabilidade em si. Também é possível transformar o benef�
 -> Nem precisa pensar em probabilidade por conta do algoritmo já ser semi-guloso por estar começando do
 final e priorizando estes itens, sendo capaz dos itens do começo não terem nem chance por conta da mochila
 ficar cheia
+
+
+
+-> Calcular mediana do beneficio/peso para decidir se vai ou não colocar na mochila
+-> Colocar apenas o que possui o melhor beneficio/peso, contanto que esteja dentro da condição acima

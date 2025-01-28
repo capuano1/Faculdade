@@ -1,14 +1,17 @@
 import random
 import math
+import numpy as np
+import random
+from dataclasses import dataclass
 
 def read_ttp_instance(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    tsp_data = []
-    kp_data = []
+    ttp_data: list[City] = []
     tsp_section = False
     kp_section = False
+    dimension: int = 0
     kp_capacity: int = 0
     min_speed: float = 0
     max_speed: float = 0
@@ -23,6 +26,10 @@ def read_ttp_instance(file_path):
             part = line.split("KNAPSACK DATA TYPE:")
             strpart = part[1].strip
             print("Tipo de mochila: " + strpart)
+        elif line.startswith("DIMENSION:"):
+            part = line.split("DIMENSION:")
+            strpart = part[1].strip
+            dimension = int(strpart)
         elif line.startswith("CAPACITY OF KNAPSACK:"):
             part = line.split("CAPACITY OF KNAPSACK:")
             strpart = part[1].strip
@@ -46,22 +53,36 @@ def read_ttp_instance(file_path):
         elif line.startswith("ITEMS SECTION"):
             tsp_section = False
             kp_section = True
+            ttp_data.append(City(0, -1, -1, []))
             continue
 
         if tsp_section:
-            tsp_data.append(line.strip())
+            lin = line.split()
+            ind = int(lin[0])
+            x = float(lin[1])
+            y = float(lin[2])
+            ttp_data.append(City(ind, x, y, []))
         elif kp_section:
-            kp_data.append(line.strip())
+            lin = line.split()
+            ind = int(lin[0])
+            p = float(lin[1])
+            w = float(lin[2])
+            assInd = int(lin[3])
+            benef: float = (p/w) + (assInd-1)
+            ttp_data[assInd].items.append(Item(ind, p, w, benef, assInd))
 
-    return tsp_data, kp_data, kp_capacity, min_speed, max_speed, rent_ratio
+    return ttp_data, kp_capacity, min_speed, max_speed, rent_ratio
 
-def calculate_distances(tsp_data):
-    num_cities = len(tsp_data)
+def calculate_distances(ttp_data):
+    num_cities = len(ttp_data)
     distances = [[0] * num_cities for _ in range(num_cities)]
 
     cities = []
-    for line in tsp_data:
-        index, x, y = map(int, line.split())
+    for city in ttp_data:
+        if city.ind == 0: continue
+        index = city.ind
+        x = city.posX
+        y = city.posY
         cities.append((index, x, y))
 
     for i in range(num_cities):
@@ -69,19 +90,19 @@ def calculate_distances(tsp_data):
             if i != j:
                 dist = math.ceil(math.sqrt((cities[j][1] - cities[i][1]) ** 2 + (cities[j][2] - cities[i][2]) ** 2))
                 distances[i][j] = dist
-                distances[j][i] = dist
+                #distances[j][i] = dist => Duplicado
             else:
                 distances[i][j] = 10000000.0
 
     return distances
 
-def grasp_ttp(tsp_data, kp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio):
+def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio):
     best_solution = None
     best_value = float('-inf')
 
     for _ in range(num_iterations):
         # Fase de Construção
-        current_solution = construct_solution(tsp_data, kp_data, alpha, kp_capacity)
+        current_solution = construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio)
         
         # Fase de Busca Local
         current_solution = local_search(current_solution, kp_capacity)
@@ -94,21 +115,36 @@ def grasp_ttp(tsp_data, kp_data, distances, num_iterations, alpha, kp_capacity, 
 
     return best_solution
 
-def construct_solution(tsp_data, kp_data, alpha, kp_capacity, min_speed, max_speed, rent_ratio):
-    # Inicializar a solução com a rota do TSP
-    num_cities = len(tsp_data)
-    solution = {'route': list(range(1, num_cities + 1)), 'items': []}
-    remaining_capacity = kp_capacity
+def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio):
+    num_cities = len(ttp_data)
+    solutionKnapsack = []
+    # Cidade que começamos
+    cidadeAtual = 1
+    # Lista para guardar os índices das cidades que já passamos. Vamos remover estes índices após ordenar as distâncias mais próximas
+    # Já começamos com o 1 pois ele não deverá ser calculado aqui, sendo a primeira e última cidade
+    # Ao fazer a equação para determinar o preço, eu devo manualmente adicionar o custo de saída e volta dela, tendo entre ambas um for com toda a equação restante
+    unavailable = [1]
+    # Zerar a solutionKnapsack e deixar ela preparada para alterar o que for
+    for city in ttp_data:
+        if city.ind == 0: continue
+        solutionKnapsack.append([0] * len(city.items))
+    # Looping para gerar a solução por cidade. Devemos percorrer ao contrário (última até a primeira) e ir decidindo os items
+    # Ao rodar da última até a primeira, este algoritmo acaba sendo guloso para o KP, já que damos prioridade aos últimos itens
+    for i in range(num_cities-1):
+        # Pegamos as alpha cidades mais próximas
+        prox = np.argsort(distances[cidadeAtual-1]) - unavailable
+        if len(prox) > alpha: prox = prox[:alpha]
+        proxCidade = random.choice(prox)
 
-    # Adicionar itens à mochila de forma aleatória
-    random.shuffle(kp_data)
-    for line in kp_data:
-        index, profit, weight, node = map(int, line.split())
-        if weight <= remaining_capacity:
-            solution['items'].append({'index': index, 'profit': profit, 'weight': weight, 'node': node})
-            remaining_capacity -= weight
+        
 
-    return solution
+
+    # Ambos devem ser arrays. solutionRoute com a rota de solução e solutionKnapsack com a solução dos itens que devem estar na mochila.
+    # solutionRoute deverá ser um array na ordem em que as cidades são visitadas.
+    # solutionKnapsack deverá ser um array binário, levando em conta o índice do item
+    # Pegar tamanho dos problemas + 1 e fazer lista binária ((0, 0, 0), (0, 1, 0)...) indicando quais itens colocar na mochila.
+    # Assim ele organiza por cidade o índice e a parte de dentro pode só fazer um for mesmo (ou checar o ind deles)
+    return solutionRoute, solutionKnapsack
 
 def local_search(solution, capacity):
     # Implementar a busca local para melhorar a solução
@@ -122,14 +158,30 @@ def evaluate_solution(solution):
 def main():
     ttp_input_file = ".\Inst\instancia.ttp"
 
-    tsp_data, kp_data, kp_capacity, min_speed, max_speed, rent_ratio = read_ttp_instance(ttp_input_file)
-    distances = calculate_distances(tsp_data)
+    ttp_data, kp_capacity, min_speed, max_speed, rent_ratio = read_ttp_instance(ttp_input_file)
+    distances = calculate_distances(ttp_data)
 
     num_iterations = 100
     alpha = 3
 
-    best_solution = grasp_ttp(tsp_data, kp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio)
+    best_solution = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio)
     print("Melhor solução encontrada:", best_solution)
 
 if __name__ == "__main__":
     main()
+
+@dataclass
+class Item:
+    index: int
+    profit: float
+    weight: float
+    benefit: float
+    assignedIndex: int
+
+@dataclass
+class City:
+    ind: int
+    posX: float
+    posY: float
+    items: list[Item] = []
+
