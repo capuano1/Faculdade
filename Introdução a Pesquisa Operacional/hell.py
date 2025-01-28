@@ -52,7 +52,7 @@ def write_ampl_file(file_path, data, header, footer):
         file.write(footer + '\n')
 
 def main():
-    input_file = '.\Inst\instancia.ttp'
+    input_file = r".\Inst\instancia.ttp"
     tsp_output_file = 'tsp_data.dat'
     kp_output_file = 'kp_data.dat'
 
@@ -60,9 +60,9 @@ def main():
     distances = calculate_distances(tsp_data)
 
     tsp_header = ""
-    tsp_footer = "end;"
-    kp_header = "set ITEMS := 1..50;\nparam profit :=\n"
-    kp_footer = ";\nparam capacity := 4029;\nend;"
+    tsp_footer = ";end;"
+    kp_header = ""
+    kp_footer = "end;"
 
     tsp_data_ampl = []
     line = "param c: "
@@ -80,9 +80,16 @@ def main():
         line = ""
 
     kp_data_ampl = []
+    kp_data_ampl.append("param: profit := ")
     for line in kp_data:
         index, profit, weight, node = line.split()
-        kp_data_ampl.append(f"{index} {profit} {weight}")
+        kp_data_ampl.append(f"{index} {profit}")
+    kp_data_ampl.append(";")
+    kp_data_ampl.append("param: weight := ")
+    for line in kp_data:
+        index, profit, weight, node = line.split()
+        kp_data_ampl.append(f"{index} {weight}")
+    kp_data_ampl.append(";")
 
     write_ampl_file(tsp_output_file, tsp_data_ampl, tsp_header, tsp_footer)
     write_ampl_file(kp_output_file, kp_data_ampl, kp_header, kp_footer)

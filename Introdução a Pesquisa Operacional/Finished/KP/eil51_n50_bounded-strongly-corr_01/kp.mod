@@ -1,7 +1,7 @@
 set ITEMS := 1..50; # Conjunto de itens
 param profit{ITEMS}; # Lucro de cada item
 param weight{ITEMS}; # Peso de cada item
-param capacity := 2226; # Capacidade máxima
+param capacity := 4029; # Capacidade máxima
 
 # Var decisão
 var x{ITEMS} binary; # x[i] = 1 se o item i for incluído na mochila, 0 caso contrário
@@ -10,7 +10,7 @@ var x{ITEMS} binary; # x[i] = 1 se o item i for incluído na mochila, 0 caso con
 maximize total_profit:
     sum{i in ITEMS} profit[i] * x[i];
 
-subject to
+subject to:
     # Não pode passar da cap máxima
     weight_constraint:
         sum{i in ITEMS} weight[i] * x[i] <= capacity;

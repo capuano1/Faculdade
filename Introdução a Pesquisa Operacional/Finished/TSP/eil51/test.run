@@ -2,4 +2,4 @@ reset;
 model tsp.mod;
 #expand > tsp51.lp;
 solve;
-display x;
+display _solve_elapsed_time, total_cost, x;

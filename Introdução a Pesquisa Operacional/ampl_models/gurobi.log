@@ -1,0 +1,16 @@
+
+Gurobi 12.0.0 (win64, gurobi_cl) logging started Mon Jan 20 22:42:11 2025
+
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2612327
+Set parameter LogFile to value "gurobi.log"
+Using license file C:\Users\thiag\gurobi.lic
+Academic license 2612327 - for non-commercial use only - registered to ch___@usp.br
+
+Gurobi Optimizer version 12.0.0 build v12.0.0rc1 (win64 - Windows 10.0 (19045.2))
+Copyright (c) 2024, Gurobi Optimization, LLC
+
+
+Error 10012: Unknown file type for file 'tsp.mod'
+

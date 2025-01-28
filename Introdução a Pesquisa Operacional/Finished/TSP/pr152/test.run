@@ -1,4 +1,4 @@
 reset;
 model tsp.mod;
 solve;
-display x;
+display _solve_elapsed_time, total_cost, x;

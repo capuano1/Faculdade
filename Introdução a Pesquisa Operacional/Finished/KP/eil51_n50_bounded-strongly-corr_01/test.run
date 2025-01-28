@@ -1,0 +1,4 @@
+reset;
+model kp.mod;
+solve;
+display _solve_elapsed_time, total_profit, x;
