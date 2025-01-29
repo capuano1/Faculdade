@@ -74,7 +74,7 @@ def read_ttp_instance(file_path):
             p = float(lin[1])
             w = float(lin[2])
             assInd = int(lin[3])
-            benef: float = (p/w) + (assInd-1)
+            benef: float = (p/w)
             med_benef += benef
             ttp_data[assInd].items.append(Item(ind, p, w, benef, assInd))
     med_benef /= numItems
@@ -123,7 +123,7 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
     return best_solution
 
 def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio, med_benef):
-    num_cities = len(ttp_data)
+    num_cities = len(ttp_data)-1
     solutionKnapsack = []
     solutionRoute = []
     # Cidade que começamos
@@ -138,6 +138,8 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
         solutionKnapsack.append([0] * len(city.items))
     # Looping para gerar a solução por cidade. Devemos percorrer ao contrário (última até a primeira) e ir decidindo os items
     # Ao rodar da última até a primeira, este algoritmo acaba sendo guloso para o KP, já que damos prioridade aos últimos itens
+    cid = num_cities
+    biggest: float = 0
     for i in range(num_cities-1):
         # "TSP" primeiro, "KP" depois
         # Pegamos as alpha cidades mais próximas
@@ -146,15 +148,22 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
         proxCidade = random.choice(prox)
         unavailable.append(proxCidade)
         solutionRoute.insert(0, proxCidade)
-
+        for item in ttp_data[proxCidade].items:
+            item.benefit += cid
+            if (item.benefit > biggest): biggest = item.benefit
+        cid -= 1
+    
+    for i in range(num_cities-1):
         # "KP"
         options = []
+        i = 0
         for item in ttp_data[proxCidade].items:
-            options.append(item.benefit)
-        best = np.argsort(options)[0]
-        if options[best] >= med_benef and kp_capacity - ttp_data[proxCidade].items[best].weight >= 0:
-            solutionKnapsack[proxCidade][best] = 1
-            kp_capacity -= ttp_data[proxCidade].items[best].weight
+            chance = round((item.benefit / biggest) * 100)
+            if kp_capacity - ttp_data[proxCidade].items[i].weight >= 0:
+                if chance >= random.randint(0, 99):
+                    solutionKnapsack[proxCidade][i] = 1
+                    kp_capacity -= ttp_data[proxCidade].items[i].weight
+        cidadeAtual = proxCidade
     
     # Inserir a primeira cidade no começo para facilitar o meu for no futuro que irá calcular o lucro final
     solutionRoute.insert(0, 1)
