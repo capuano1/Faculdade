@@ -22,3 +22,6 @@ ficar cheia
 
 -> Calcular mediana do beneficio/peso para decidir se vai ou não colocar na mochila
 -> Colocar apenas o que possui o melhor beneficio/peso, contanto que esteja dentro da condição acima
+
+-> Chance de colocar item na mochila: 100% considerando maior benefício/peso da instancia OK
+-> Busca Local: Calcular separadamente TSP e KP. Então, metade das iterações vão para TSP e metade para KP
