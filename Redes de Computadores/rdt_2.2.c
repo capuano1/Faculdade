@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include "rdt.h"
 
@@ -85,17 +86,19 @@ resend:
 		return ERROR;
 	}
 	addrlen = sizeof(struct sockaddr_in);
-	// Bloqueante, mas precisa avisar o SO que existe um timeout
+	// Bloqueante, mas precisa avisar o SO que existe um timeout => OK, setsockopt()
 	nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
 		(socklen_t *)&addrlen);
 	int tsa = clock_gettime();
 	int sampleRTT = tsa - tsp;
-	// Problema: com o estouro do temporizados, nr fica negativo e entra nesse if
+	// if (errno == 62) nr = 0;  => 62 error EGAIN EWOULDBLOCK => Timer Expired
+	// Problema: com o estouro do temporizador, nr fica negativo e entra nesse if
 	if (nr < 0) {
 		perror("rdt_send: recvfrom(PKT_ACK)");
 		return ERROR;
 	}
 	// Aqui vai ter o estouro do temporizador
+	// || errno == 62?
 	if (iscorrupted(&ack) || !has_ackseq(&ack, _snd_seqnum)){
 		printf("rdt_send: iscorrupted || !has_ackseq");
 		goto resend;
