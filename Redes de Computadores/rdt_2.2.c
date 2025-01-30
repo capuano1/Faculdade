@@ -77,7 +77,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
 
 resend:
 	int tsp = clock_gettime();
-	if (setsockopt(sockfd, SOL_SOCKET)
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout) == -1) perror("Error setting timer");
 	ns = sendto(sockfd, &p, p.h.pkt_size, 0,
 			(struct sockaddr *)dst, sizeof(struct sockaddr_in));
 	if (ns < 0) {
