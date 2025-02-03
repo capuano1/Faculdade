@@ -25,3 +25,5 @@ ficar cheia
 
 -> Chance de colocar item na mochila: 100% considerando maior benefício/peso da instancia OK
 -> Busca Local: Calcular separadamente TSP e KP. Então, metade das iterações vão para TSP e metade para KP
+
+-> Professor acha melhor o first do que o best

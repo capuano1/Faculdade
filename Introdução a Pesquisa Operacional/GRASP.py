@@ -4,6 +4,21 @@ import numpy as np
 import random
 from dataclasses import dataclass
 
+@dataclass
+class Item:
+    index: int
+    profit: float
+    weight: float
+    benefit: float
+    assignedIndex: int
+
+@dataclass
+class City:
+    ind: int
+    posX: float
+    posY: float
+    items: list[Item]
+
 def read_ttp_instance(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -22,36 +37,36 @@ def read_ttp_instance(file_path):
     for line in lines:
         if line.startswith("PROBLEM NAME"):
             part = line.split("PROBLEM NAME:")
-            strpart = part[1].strip
-            print("Instância localizada: " + strpart)
+            strippart = part[1].strip()
+            print("Instância localizada: " + str(strippart))
         elif line.startswith("KNAPSACK DATA TYPE"):
             part = line.split("KNAPSACK DATA TYPE:")
-            strpart = part[1].strip
-            print("Tipo de mochila: " + strpart)
+            strippart = part[1].strip()
+            print("Tipo de mochila: " + str(strippart))
         elif line.startswith("DIMENSION:"):
             part = line.split("DIMENSION:")
-            strpart = part[1].strip
-            dimension = int(strpart)
+            strippart = part[1].strip()
+            dimension = int(strippart)
         elif line.startswith("NUMBER OF ITEMS:"):
             part = line.split("NUMBER OF ITEMS:")
-            strpart = part[1].strip
-            numItems = int(strpart)
+            strippart = part[1].strip()
+            numItems = int(strippart)
         elif line.startswith("CAPACITY OF KNAPSACK:"):
             part = line.split("CAPACITY OF KNAPSACK:")
-            strpart = part[1].strip
-            kp_capacity = int(strpart)
+            strippart = part[1].strip()
+            kp_capacity = int(strippart)
         elif line.startswith("MIN SPEED:"):
             part = line.split("MIN SPEED:")
-            strpart = part[1].strip
-            min_speed = float(strpart)
+            strippart = part[1].strip()
+            min_speed = float(strippart)
         elif line.startswith("MAX SPEED:"):
             part = line.split("MAX SPEED:")
-            strpart = part[1].strip
-            max_speed = float(strpart)
+            strippart = part[1].strip()
+            max_speed = float(strippart)
         elif line.startswith("RENTING RATIO"):
             part = line.split("RENTING RATIO:")
-            strpart = part[1].strip
-            rent_ratio = float(strpart)
+            strippart = part[1].strip()
+            rent_ratio = float(strippart)
         elif line.startswith("NODE_COORD_SECTION"):
             tsp_section = True
             kp_section = False
@@ -59,7 +74,6 @@ def read_ttp_instance(file_path):
         elif line.startswith("ITEMS SECTION"):
             tsp_section = False
             kp_section = True
-            ttp_data.append(City(0, -1, -1, []))
             continue
 
         if tsp_section:
@@ -76,7 +90,7 @@ def read_ttp_instance(file_path):
             assInd = int(lin[3])
             benef: float = (p/w)
             med_benef += benef
-            ttp_data[assInd].items.append(Item(ind, p, w, benef, assInd))
+            ttp_data[assInd-1].items.append(Item(ind, p, w, benef, assInd))
     med_benef /= numItems
     return ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef
 
@@ -86,10 +100,10 @@ def calculate_distances(ttp_data):
 
     cities = []
     for city in ttp_data:
-        if city.ind == 0: continue
-        index = city.ind
-        x = city.posX
-        y = city.posY
+        #if city.ind == 0: continue
+        index: int = city.ind
+        x: float = city.posX
+        y: float = city.posY
         cities.append((index, x, y))
 
     for i in range(num_cities):
@@ -109,8 +123,15 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
 
     for _ in range(num_iterations):
         # Fase de Construção
-        current_solution = construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio, med_benef)
+        solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio, med_benef)
+        with open("results.txt", 'w') as file:
+            file.write(str(solutionRoute) + '\n')
+            file.write('\n' + str(solutionKnapsack) + '\n')
+
         
+        #print(solutionRoute)
+        #print(solutionKnapsack)
+
         # Fase de Busca Local
         current_solution = local_search(current_solution, kp_capacity)
         
@@ -127,11 +148,11 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
     solutionKnapsack = []
     solutionRoute = []
     # Cidade que começamos
-    cidadeAtual = 1
+    cidadeAtual = 0
     # Lista para guardar os índices das cidades que já passamos. Vamos remover estes índices após ordenar as distâncias mais próximas
     # Já começamos com o 1 pois ele não deverá ser calculado aqui, sendo a primeira e última cidade
     # Ao fazer a equação para determinar o preço, eu devo manualmente adicionar o custo de saída e volta dela, tendo entre ambas um for com toda a equação restante
-    unavailable = [1]
+    unavailable = [0]
     # Zerar a solutionKnapsack e deixar ela preparada para alterar o que for
     for city in ttp_data:
         if city.ind == 0: continue
@@ -140,33 +161,42 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
     # Ao rodar da última até a primeira, este algoritmo acaba sendo guloso para o KP, já que damos prioridade aos últimos itens
     cid = num_cities
     biggest: float = 0
+    totalDist = 0
     for i in range(num_cities-1):
         # "TSP" primeiro, "KP" depois
         # Pegamos as alpha cidades mais próximas
-        prox = np.argsort(distances[cidadeAtual-1]) - unavailable
+        aux = np.argsort(distances[cidadeAtual-1])
+        prox = [cid for cid in aux if cid not in unavailable]
         if len(prox) > alpha: prox = prox[:alpha]
         proxCidade = random.choice(prox)
+        totalDist += distances[cidadeAtual-1][proxCidade-1]
         unavailable.append(proxCidade)
         solutionRoute.insert(0, proxCidade)
+        j = 0
         for item in ttp_data[proxCidade].items:
+            if item.benefit >= 10 and kp_capacity - item.weight >= 0:
+                solutionKnapsack[proxCidade][j] = 1
             item.benefit += cid
             if (item.benefit > biggest): biggest = item.benefit
+            j += 1
         cid -= 1
-    
-    for i in range(num_cities-1):
-        # "KP"
-        options = []
-        i = 0
-        for item in ttp_data[proxCidade].items:
-            chance = round((item.benefit / biggest) * 100)
-            if kp_capacity - ttp_data[proxCidade].items[i].weight >= 0:
-                if chance >= random.randint(0, 99):
-                    solutionKnapsack[proxCidade][i] = 1
-                    kp_capacity -= ttp_data[proxCidade].items[i].weight
         cidadeAtual = proxCidade
-    
+    print(totalDist)
+    for i in reversed(solutionRoute):
+        # "KP"
+        if i == 0: break
+        for item in ttp_data[i].items:
+            j = 0
+            chance = round((item.benefit / biggest) * 100)
+            if kp_capacity - ttp_data[i].items[j].weight >= 0 and solutionKnapsack[i][j] == 0:
+                if chance >= random.randint(0, 99):
+                    solutionKnapsack[i][j] = 1
+                    kp_capacity -= ttp_data[i].items[j].weight
+            j += 1
+        
     # Inserir a primeira cidade no começo para facilitar o meu for no futuro que irá calcular o lucro final
-    solutionRoute.insert(0, 1)
+    solutionRoute.insert(0, 0)
+    print(kp_capacity)
 
     # Ambos devem ser arrays. solutionRoute com a rota de solução e solutionKnapsack com a solução dos itens que devem estar na mochila.
     # solutionRoute deverá ser um array na ordem em que as cidades são visitadas.
@@ -198,19 +228,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-@dataclass
-class Item:
-    index: int
-    profit: float
-    weight: float
-    benefit: float
-    assignedIndex: int
-
-@dataclass
-class City:
-    ind: int
-    posX: float
-    posY: float
-    items: list[Item] = []
-
