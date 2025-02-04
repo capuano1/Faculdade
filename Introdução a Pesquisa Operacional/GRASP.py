@@ -123,7 +123,7 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
 
     # Fase de Construção
     solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
-    totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed)
+    totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
     with open("results.txt", 'w') as file:
         file.write(str(solutionRoute) + '\n')
         file.write('\n' + str(solutionKnapsack) + '\n')
@@ -209,12 +209,12 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances):
     # Assim ele organiza por cidade o índice e a parte de dentro pode só fazer um for mesmo (ou checar o ind deles)
     return solutionRoute, solutionKnapsack
 
-def local_search(solution, capacity):
+def local_search(solutionRoute, solutionKnapsack, kp_capacity, ttp_data):
     # Implementar a busca local para melhorar a solução
     # Exemplo: troca de itens, remoção e inserção de novos itens
-    return solution
+    return solutionRoute, solutionKnapsack
 
-def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed):
+def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
     totalDist = 0
     totalPeso = 0
     totalLucro = 0
@@ -228,7 +228,7 @@ def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_c
             j += 1
         velAtual = max_speed * (1 - (float(totalPeso/kp_capacity)))
         if velAtual < min_speed: velAtual = min_speed
-
+    totalLucro -= rent_ratio*totalDist
     return totalDist, totalLucro
 
 def main():
