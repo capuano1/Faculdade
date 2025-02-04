@@ -121,16 +121,16 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
     best_solution = None
     best_value = float('-inf')
 
-    for _ in range(num_iterations):
-        # Fase de Construção
-        solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
-        totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed)
-        with open("results.txt", 'w') as file:
-            file.write(str(solutionRoute) + '\n')
-            file.write('\n' + str(solutionKnapsack) + '\n')
-            file.write('\n' + str(totalDist) + '\n')
-            file.write('\n' + str(totalLucro) + '\n')
+    # Fase de Construção
+    solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
+    totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed)
+    with open("results.txt", 'w') as file:
+        file.write(str(solutionRoute) + '\n')
+        file.write('\n' + str(solutionKnapsack) + '\n')
+        file.write('\n' + str(totalDist) + '\n')
+        file.write('\n' + str(totalLucro) + '\n')
 
+    for _ in range(num_iterations):
         
         #print(solutionRoute)
         #print(solutionKnapsack)
@@ -149,7 +149,7 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
 def construct_solution(ttp_data, alpha, kp_capacity, distances):
     num_cities = len(ttp_data)-1
     solutionKnapsack = []
-    solutionRoute = []
+    solutionRoute: list[int] = []
     # Cidade que começamos
     cidadeAtual = 0
     # Lista para guardar os índices das cidades que já passamos. Vamos remover estes índices após ordenar as distâncias mais próximas
@@ -158,7 +158,7 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances):
     unavailable = [0]
     # Zerar a solutionKnapsack e deixar ela preparada para alterar o que for
     for city in ttp_data:
-        if city.ind == 1: continue
+        #if city.ind == 1: continue
         solutionKnapsack.append([0] * len(city.items))
     # Looping para gerar a solução por cidade. Devemos percorrer ao contrário (última até a primeira) e ir decidindo os items
     # Ao rodar da última até a primeira, este algoritmo acaba sendo guloso para o KP, já que damos prioridade aos últimos itens
@@ -168,13 +168,13 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances):
     for i in range(num_cities-1):
         # "TSP" primeiro, "KP" depois
         # Pegamos as alpha cidades mais próximas
-        aux = np.argsort(distances[cidadeAtual])
+        aux: list[int] = np.argsort(distances[cidadeAtual])
         prox = [cid for cid in aux if cid not in unavailable]
         if len(prox) > alpha: prox = prox[:alpha]
-        proxCidade = random.choice(prox)
+        proxCidade: int = random.choice(prox)
         totalDist += distances[cidadeAtual][proxCidade]
         unavailable.append(proxCidade)
-        solutionRoute.insert(0, proxCidade)
+        solutionRoute.insert(0, int(proxCidade))
         j = 0
         for item in ttp_data[proxCidade].items:
             if item.benefit >= 10 and kp_capacity - item.weight >= 0:
@@ -192,7 +192,7 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances):
         for item in ttp_data[i].items:
             j = 0
             chance = round((item.benefit / biggest) * 100)
-            if kp_capacity - ttp_data[i].items[j].weight >= 0 and solutionKnapsack[i-1][j] == 0:
+            if kp_capacity - ttp_data[i].items[j].weight >= 0 and solutionKnapsack[i][j] == 0:
                 if chance >= random.randint(0, 99):
                     solutionKnapsack[i-1][j] = 1
                     kp_capacity -= ttp_data[i].items[j].weight
