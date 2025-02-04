@@ -27,3 +27,6 @@ ficar cheia
 -> Busca Local: Calcular separadamente TSP e KP. Então, metade das iterações vão para TSP e metade para KP
 
 -> Professor acha melhor o first do que o best
+-> RVND na busca local: usa um K aleatório, sendo que este K possui, por exemplo, 3 heurísticas diferentes
+-> Cada heurística é testada, se der um resultado melhor, reinicia a lista L de heurísticas, senão, remove
+a heurística testada e testa outra.

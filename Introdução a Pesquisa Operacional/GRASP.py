@@ -123,10 +123,13 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
 
     for _ in range(num_iterations):
         # Fase de Construção
-        solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio, med_benef)
+        solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
+        totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed)
         with open("results.txt", 'w') as file:
             file.write(str(solutionRoute) + '\n')
             file.write('\n' + str(solutionKnapsack) + '\n')
+            file.write('\n' + str(totalDist) + '\n')
+            file.write('\n' + str(totalLucro) + '\n')
 
         
         #print(solutionRoute)
@@ -136,14 +139,14 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
         current_solution = local_search(current_solution, kp_capacity)
         
         # Atualizar a melhor solução
-        current_value = evaluate_solution(current_solution)
+        current_value = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed)
         if current_value > best_value:
             best_solution = current_solution
             best_value = current_value
 
-    return best_solution
+    return solutionRoute
 
-def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_speed, rent_ratio, med_benef):
+def construct_solution(ttp_data, alpha, kp_capacity, distances):
     num_cities = len(ttp_data)-1
     solutionKnapsack = []
     solutionRoute = []
@@ -155,7 +158,7 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
     unavailable = [0]
     # Zerar a solutionKnapsack e deixar ela preparada para alterar o que for
     for city in ttp_data:
-        if city.ind == 0: continue
+        if city.ind == 1: continue
         solutionKnapsack.append([0] * len(city.items))
     # Looping para gerar a solução por cidade. Devemos percorrer ao contrário (última até a primeira) e ir decidindo os items
     # Ao rodar da última até a primeira, este algoritmo acaba sendo guloso para o KP, já que damos prioridade aos últimos itens
@@ -165,17 +168,18 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
     for i in range(num_cities-1):
         # "TSP" primeiro, "KP" depois
         # Pegamos as alpha cidades mais próximas
-        aux = np.argsort(distances[cidadeAtual-1])
+        aux = np.argsort(distances[cidadeAtual])
         prox = [cid for cid in aux if cid not in unavailable]
         if len(prox) > alpha: prox = prox[:alpha]
         proxCidade = random.choice(prox)
-        totalDist += distances[cidadeAtual-1][proxCidade-1]
+        totalDist += distances[cidadeAtual][proxCidade]
         unavailable.append(proxCidade)
         solutionRoute.insert(0, proxCidade)
         j = 0
         for item in ttp_data[proxCidade].items:
             if item.benefit >= 10 and kp_capacity - item.weight >= 0:
                 solutionKnapsack[proxCidade][j] = 1
+                kp_capacity -= item.weight
             item.benefit += cid
             if (item.benefit > biggest): biggest = item.benefit
             j += 1
@@ -188,9 +192,9 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances, min_speed, max_s
         for item in ttp_data[i].items:
             j = 0
             chance = round((item.benefit / biggest) * 100)
-            if kp_capacity - ttp_data[i].items[j].weight >= 0 and solutionKnapsack[i][j] == 0:
+            if kp_capacity - ttp_data[i].items[j].weight >= 0 and solutionKnapsack[i-1][j] == 0:
                 if chance >= random.randint(0, 99):
-                    solutionKnapsack[i][j] = 1
+                    solutionKnapsack[i-1][j] = 1
                     kp_capacity -= ttp_data[i].items[j].weight
             j += 1
         
@@ -210,9 +214,22 @@ def local_search(solution, capacity):
     # Exemplo: troca de itens, remoção e inserção de novos itens
     return solution
 
-def evaluate_solution(solution):
-    # Avaliar a solução considerando a rota do TSP e os itens na mochila
-    return random.random()  # Substituir por uma função de avaliação real
+def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed):
+    totalDist = 0
+    totalPeso = 0
+    totalLucro = 0
+    velAtual: float = max_speed
+    for i in range(1, len(solutionRoute)):
+        totalDist += distances[solutionRoute[i-1]][solutionRoute[i]] / velAtual
+        j = 0
+        for item in ttp_data[solutionRoute[i]].items:
+            totalPeso += solutionKnapsack[i][j] * item.weight
+            totalLucro += solutionKnapsack[i][j] * item.profit
+            j += 1
+        velAtual = max_speed * (1 - (float(totalPeso/kp_capacity)))
+        if velAtual < min_speed: velAtual = min_speed
+
+    return totalDist, totalLucro
 
 def main():
     ttp_input_file = ".\Inst\instancia.ttp"
