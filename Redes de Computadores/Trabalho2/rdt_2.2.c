@@ -92,7 +92,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
 
 resend:
     clock_gettime(CLOCK_REALTIME, &tsp);
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout) == -1)) perror("Error setting timer");
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
     ns = sendto(sockfd, &p, p.h.pkt_size, 0,
                 (struct sockaddr *)dst, sizeof(struct sockaddr_in));
     if (ns < 0) {
@@ -146,7 +146,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 
 rerecv:
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout) == -1)) perror("Error setting timer");
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
     // Dados disponíveis para leitura
     addrlen = sizeof(struct sockaddr_in);
     nr = recvfrom(sockfd, &p, sizeof(pkt), 0, (struct sockaddr *)src,
