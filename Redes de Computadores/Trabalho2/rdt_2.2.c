@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdint.h>
-#include <time.h>
+#include <sys/time.h>
 #include <errno.h>
 
 #include "rdt.h"
