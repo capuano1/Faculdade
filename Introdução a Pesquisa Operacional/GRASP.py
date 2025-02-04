@@ -121,17 +121,17 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
     best_solution = None
     best_value = float('-inf')
 
-    # Fase de Construção
-    solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
-    totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-    with open("results.txt", 'w') as file:
-        file.write(str(solutionRoute) + '\n')
-        file.write('\n' + str(solutionKnapsack) + '\n')
-        file.write('\n' + str(totalDist) + '\n')
-        file.write('\n' + str(totalLucro) + '\n')
-
     for _ in range(num_iterations):
         
+        # Fase de Construção
+        solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
+        totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+        with open("results.txt", 'w') as file:
+            file.write(str(solutionRoute) + '\n')
+            file.write('\n' + str(solutionKnapsack) + '\n')
+            file.write('\n' + str(totalDist) + '\n')
+            file.write('\n' + str(totalLucro) + '\n')
+
         #print(solutionRoute)
         #print(solutionKnapsack)
 
@@ -146,7 +146,9 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
 
     return solutionRoute
 
-def construct_solution(ttp_data, alpha, kp_capacity, distances):
+def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances):
+    ttp_data = ttp_data_original.copy()
+    kp_capacity = kp_capacity_original
     num_cities = len(ttp_data)-1
     solutionKnapsack = []
     solutionRoute: list[int] = []
@@ -177,10 +179,10 @@ def construct_solution(ttp_data, alpha, kp_capacity, distances):
         solutionRoute.insert(0, int(proxCidade))
         j = 0
         for item in ttp_data[proxCidade].items:
-            if item.benefit >= 10 and kp_capacity - item.weight >= 0:
+            item.benefit += cid
+            if item.benefit - cid >= 10 and kp_capacity - item.weight >= 0:
                 solutionKnapsack[proxCidade][j] = 1
                 kp_capacity -= item.weight
-            item.benefit += cid
             if (item.benefit > biggest): biggest = item.benefit
             j += 1
         cid -= 1
