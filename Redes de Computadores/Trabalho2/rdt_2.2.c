@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <time.h>
+#include <errno.h>
 
 #include "rdt.h"
 
@@ -90,7 +91,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
 
 resend:
-    tsp = clock_gettime();
+    clock_gettime(CLOCK_REALTIME, &tsp);
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout) == -1)) perror("Error setting timer");
     ns = sendto(sockfd, &p, p.h.pkt_size, 0,
                 (struct sockaddr *)dst, sizeof(struct sockaddr_in));
@@ -102,7 +103,7 @@ resend:
     // Bloqueante, mas precisa avisar o SO que existe um timeout => OK, setsockopt()
     nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
                   (socklen_t *)&addrlen);
-    tsa = clock_gettime();
+    clock_gettime(CLOCK_REALTIME, &tsa);
     sampleRTT = subtractTime(tsa, tsp);
     // if (errno == 11) nr = 0;  => 62 error EAGAIN EWOULDBLOCK => Timer Expired
 	// Problema: com o estouro do temporizador, nr fica negativo e entra nesse if
