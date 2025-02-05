@@ -118,7 +118,8 @@ def calculate_distances(ttp_data):
     return distances
 
 def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef):
-    best_solution = None
+    best_solution_route = None
+    best_solution_knapsack = None
     best_value = float('-inf')
 
     for _ in range(num_iterations):
@@ -139,8 +140,8 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
         current_solution = local_search(current_solution, kp_capacity)
         
         # Atualizar a melhor solução
-        current_value = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed)
-        if current_value > best_value:
+        totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+        if totalLucro > best_value:
             best_solution = current_solution
             best_value = current_value
 
