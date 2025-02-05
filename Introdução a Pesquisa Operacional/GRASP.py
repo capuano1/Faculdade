@@ -23,6 +23,8 @@ def read_ttp_instance(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
+    probType = ""
+    knapType = ""
     ttp_data: list[City] = []
     tsp_section = False
     kp_section = False
@@ -39,10 +41,12 @@ def read_ttp_instance(file_path):
             part = line.split("PROBLEM NAME:")
             strippart = part[1].strip()
             print("Instância localizada: " + str(strippart))
+            probType = str(strippart)
         elif line.startswith("KNAPSACK DATA TYPE"):
             part = line.split("KNAPSACK DATA TYPE:")
             strippart = part[1].strip()
             print("Tipo de mochila: " + str(strippart))
+            knapType = str(strippart)
         elif line.startswith("DIMENSION:"):
             part = line.split("DIMENSION:")
             strippart = part[1].strip()
@@ -92,7 +96,60 @@ def read_ttp_instance(file_path):
             med_benef += benef
             ttp_data[assInd-1].items.append(Item(ind, p, w, benef, assInd))
     med_benef /= numItems
-    return ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef
+    return ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef, probType, knapType, numItems, dimension
+
+def gurobiReader(probType, knapType, numItems, dimension):
+    items = 0
+    tsp = str(probType.split('-')[0])
+    ttp = tsp + "-n" + str(numItems)
+    tspSection = False
+    kpSection = False
+    solutionRoute: list[int] = []
+    type1 = []
+    type2 = []
+    type3 = []
+    
+    with open(".\\gurobi.txt", 'r') as file:
+        lines = file.readlines()
+
+    for line in lines:
+        if line.split()[0] == tsp:
+            tspSection = True
+            continue
+        elif line.split()[0] == ttp:
+            kpSection = True
+            continue
+
+        if tspSection:
+            solutionRoute = [int(x) for x in line.split()]
+            tspSection = False
+            continue
+        if kpSection:
+            if items == 0:
+                type1 = [int(x) for x in line.split()]
+                items += 1
+                continue
+            elif items == 1:
+                type2 = [int(x) for x in line.split()]
+                items += 1
+                continue
+            elif items == 2:
+                type3 = [int(x) for x in line.split()]
+                items += 1
+                kpSection = False
+                continue
+
+    if knapType == "bounded strongly corr":
+        kpDesejado = type1
+    elif knapType == "uncorrelated":
+        kpDesejado = type2
+    elif knapType == "uncorrelated, similar weights":
+        kpDesejado = type3
+
+    # print(solutionRoute)
+    # print(kpDesejado)
+    # print(kpDesejado)
+    return solutionRoute, kpDesejado
 
 def calculate_distances(ttp_data):
     num_cities = len(ttp_data)
@@ -120,32 +177,35 @@ def calculate_distances(ttp_data):
 def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef):
     best_solution_route = None
     best_solution_knapsack = None
-    best_value = float('-inf')
+    best_profit = float('-inf')
+    best_dist = None
 
     for _ in range(num_iterations):
         
         # Fase de Construção
-        solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
-        totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-        with open("results.txt", 'w') as file:
-            file.write(str(solutionRoute) + '\n')
-            file.write('\n' + str(solutionKnapsack) + '\n')
-            file.write('\n' + str(totalDist) + '\n')
-            file.write('\n' + str(totalLucro) + '\n')
+        for i in range(10):
+            solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
+            totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+
+            if totalLucro > best_profit or best_profit == float('-inf'):
+                best_solution_route = solutionRoute.copy()
+                best_solution_knapsack = solutionKnapsack.copy()
+                best_profit = totalLucro
+                best_dist = totalDist
+            with open("results.txt", 'w') as file:
+                file.write(str(best_solution_route) + '\n')
+                file.write('\n' + str(best_solution_knapsack) + '\n')
+                file.write('\n' + str(best_dist) + '\n')
+                file.write('\n' + str(best_profit) + '\n')
 
         #print(solutionRoute)
         #print(solutionKnapsack)
 
         # Fase de Busca Local
-        current_solution = local_search(current_solution, kp_capacity)
-        
-        # Atualizar a melhor solução
-        totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-        if totalLucro > best_value:
-            best_solution = current_solution
-            best_value = current_value
+        best_solution_route, best_solution_knapsack, best_profit, best_dist = local_search(best_solution_route, best_solution_knapsack, best_profit, best_dist,
+                                                                                            distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
 
-    return solutionRoute
+    return best_solution_route, best_solution_knapsack, best_profit, best_dist
 
 def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances):
     ttp_data = ttp_data_original.copy()
@@ -188,7 +248,7 @@ def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances
             j += 1
         cid -= 1
         cidadeAtual = proxCidade
-    print(totalDist)
+
     for i in reversed(solutionRoute):
         # "KP"
         if i == 0: break
@@ -203,7 +263,6 @@ def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances
         
     # Inserir a primeira cidade no começo para facilitar o meu for no futuro que irá calcular o lucro final
     solutionRoute.insert(0, 0)
-    print(kp_capacity)
 
     # Ambos devem ser arrays. solutionRoute com a rota de solução e solutionKnapsack com a solução dos itens que devem estar na mochila.
     # solutionRoute deverá ser um array na ordem em que as cidades são visitadas.
@@ -212,12 +271,83 @@ def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances
     # Assim ele organiza por cidade o índice e a parte de dentro pode só fazer um for mesmo (ou checar o ind deles)
     return solutionRoute, solutionKnapsack
 
-def local_search(solutionRoute, solutionKnapsack, kp_capacity, ttp_data):
-    # Implementar a busca local para melhorar a solução
-    # Exemplo: troca de itens, remoção e inserção de novos itens
-    return solutionRoute, solutionKnapsack
+def local_search(solutionRoute, solutionKnapsack, profit, dist, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+    # RVND => Temos 3 heurísticas diferentes: 2-OPT (TSP), Swap Cidades(TSP) e Trocar Bit (KP)
+    # Se fosse orientado a objetos, eu poderia fazer um visitor aqui pra deixar a coisa mais fácil
+    # Python também não tem switch case, afinal python é python
+    totalDist = 0
+    totalLucro = 0
+    best_route = solutionRoute.copy()
+    best_knapsack = solutionKnapsack.copy()
+    best_profit = profit
+    best_dist = dist
+    originalArray = [1, 2, 3]
+    iterationArray = originalArray.copy()
+    while iterationArray:
+        heuristics = random.choice(iterationArray)
+        # Uma função para cada heurística é melhor, ao invés de deixar uma função gigantesca aqui
+        # Também facilita a manutenção do código e adição de outras heurísticas, assim como substituição de uma por outra
+        if heuristics == 1:
+            solutionRoute = opt2heuristic(best_route)
+            totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+        elif heuristics == 2:
+            solutionRoute = swapCidades(best_route)
+            totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+        elif heuristics == 3:
+            solutionKnapsack = trocaBit(best_knapsack, len(solutionRoute))
+            totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+
+        # Analiso o resultado: se for melhor, salvo e tento o looping novamente, se for pior, removo essa opção da lista de heurísticas e tento novamente
+        if totalLucro > best_profit:
+            best_route = solutionRoute
+            best_knapsack = solutionKnapsack
+            best_profit = totalLucro
+            best_dist = totalDist
+            iterationArray = originalArray.copy()
+            continue
+        else:
+            iterationArray.remove(heuristics)
+            continue
+
+    return best_route, best_knapsack, best_profit, best_dist
+
+def opt2heuristic(solutionRoute):
+    newSolutionRoute = []
+    size = len(solutionRoute) - 1
+    small = random.randint(1, size)
+    aux: int = None
+    big: int = None
+    while small == aux or aux == None:
+        aux = random.randint(1, size)
+    if small < aux:
+        big = aux
+    else:
+        big = small
+        small = aux
+    newSolutionRoute = solutionRoute[:small] + solutionRoute[big:] + solutionRoute[small:big]
+    return newSolutionRoute
+
+def swapCidades(solutionRoute):
+    size = len(solutionRoute) - 1
+    cid1 = random.randint(1, size)
+    cid2 = None
+    while cid1 == cid2 or cid2 == None:
+        cid2 = random.randint(1, size)
+    aux = solutionRoute[cid1]
+    solutionRoute[cid1] = solutionRoute[cid2]
+    solutionRoute[cid2] = aux
+    return solutionRoute
+
+def trocaBit(solutionKnapsack, size):
+    cid = random.randint(1, size-1)
+    qte = len(solutionKnapsack[cid])
+    indItem = random.randint(0, qte-1)
+    if solutionKnapsack[cid][indItem] == 0: solutionKnapsack[cid][indItem] = 1
+    else: solutionKnapsack[cid][indItem] = 0
+    return solutionKnapsack
 
 def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+    # Simplesmente a equação
     totalDist = 0
     totalPeso = 0
     totalLucro = 0
@@ -226,25 +356,64 @@ def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_c
         totalDist += distances[solutionRoute[i-1]][solutionRoute[i]] / velAtual
         j = 0
         for item in ttp_data[solutionRoute[i]].items:
-            totalPeso += solutionKnapsack[i][j] * item.weight
-            totalLucro += solutionKnapsack[i][j] * item.profit
+            totalPeso += solutionKnapsack[solutionRoute[i]][j] * item.weight
+            totalLucro += solutionKnapsack[solutionRoute[i]][j] * item.profit
+            if totalPeso > kp_capacity:
+                totalDist = float('inf')
+                totalLucro = float('-inf')
+                return totalDist, totalLucro
             j += 1
         velAtual = max_speed * (1 - (float(totalPeso/kp_capacity)))
         if velAtual < min_speed: velAtual = min_speed
+    totalDist += distances[solutionRoute[-1]][0] / velAtual
+    totalLucro -= rent_ratio*totalDist
+    return totalDist, totalLucro
+
+def evaluate_solution_exata(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+    # Simplesmente a equação
+    numCid = len(solutionRoute)
+    totalDist = 0
+    totalPeso = 0
+    totalLucro = 0
+    velAtual: float = max_speed
+    for i in range(1, len(solutionRoute)):
+        totalDist += distances[solutionRoute[i-1]][solutionRoute[i]] / velAtual
+        j = 0
+        for item in ttp_data[solutionRoute[i]].items:
+            totalPeso += solutionKnapsack[(solutionRoute[i] + j*(numCid-1)) - 1] * item.weight
+            totalLucro += solutionKnapsack[(solutionRoute[i] + j*(numCid-1)) - 1] * item.profit
+            if totalPeso > kp_capacity:
+                totalDist = float('inf')
+                totalLucro = float('-inf')
+                return totalDist, totalLucro
+            j += 1
+        velAtual = max_speed * (1 - (float(totalPeso/kp_capacity)))
+        if velAtual < min_speed: velAtual = min_speed
+    totalDist += distances[solutionRoute[-1]][0] / velAtual
     totalLucro -= rent_ratio*totalDist
     return totalDist, totalLucro
 
 def main():
-    ttp_input_file = ".\Inst\instancia.ttp"
+    ttp_input_file = ".\\Inst\\instancia.ttp"
 
-    ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef = read_ttp_instance(ttp_input_file)
+    ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef, probType, knapType, numItems, dimension = read_ttp_instance(ttp_input_file)
     distances = calculate_distances(ttp_data)
+
+    exatoRoute, exatoKnapsack = gurobiReader(probType, knapType, numItems, dimension)
+    exatoDist, exatoLucro = evaluate_solution_exata(exatoRoute, exatoKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+    print("Solução exata a bater:")
+    print("Lucro: " + str(exatoLucro))
+    print("Tempo: " + str(exatoDist))
 
     num_iterations = 100
     alpha = 3
 
-    best_solution = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef)
-    print("Melhor solução encontrada:", best_solution)
+    solutionRoute, solutionKnapsack, profit, dist = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef)
+    print("Melhor solução encontrada:")
+    print("Rota: " + str(solutionRoute))
+    print("Mochila: " + str(solutionKnapsack))
+    print("Lucro: " + str(profit))
+    print("Tempo: " + str(dist))
 
 if __name__ == "__main__":
     main()

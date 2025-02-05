@@ -1,4 +1,7 @@
 reset;
 model kp.mod;
 solve;
-display _solve_elapsed_time, total_profit, x;
+display _solve_elapsed_time, total_profit;
+for {i in ITEMS}
+	printf "%i ", x[i];
+printf "\n";
