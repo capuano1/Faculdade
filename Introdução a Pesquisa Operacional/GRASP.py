@@ -2,6 +2,7 @@ import random
 import math
 import numpy as np
 import random
+import time
 from dataclasses import dataclass
 
 @dataclass
@@ -179,9 +180,16 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
     best_solution_knapsack = None
     best_profit = float('-inf')
     best_dist = None
+    best_time: float = 0
+    execMinutes = 10
+    maxTime = execMinutes * 60
 
-    for _ in range(num_iterations):
-        
+    local_profit: float = 0
+
+    start = time.time()
+    current = time.time()
+    while current - start < maxTime:
+        alpha = random.randint(3, 5)
         # Fase de Construção
         for i in range(10):
             solutionRoute, solutionKnapsack = construct_solution(ttp_data, alpha, kp_capacity, distances)
@@ -192,20 +200,29 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
                 best_solution_knapsack = solutionKnapsack.copy()
                 best_profit = totalLucro
                 best_dist = totalDist
-            with open("results.txt", 'w') as file:
+                best_time = current - start
+            """ with open("results.txt", 'w') as file:
                 file.write(str(best_solution_route) + '\n')
                 file.write('\n' + str(best_solution_knapsack) + '\n')
                 file.write('\n' + str(best_dist) + '\n')
-                file.write('\n' + str(best_profit) + '\n')
+                file.write('\n' + str(best_profit) + '\n') """
 
         #print(solutionRoute)
         #print(solutionKnapsack)
 
         # Fase de Busca Local
-        best_solution_route, best_solution_knapsack, best_profit, best_dist = local_search(best_solution_route, best_solution_knapsack, best_profit, best_dist,
+        best_solution_route, best_solution_knapsack, local_profit, best_dist = local_search(best_solution_route, best_solution_knapsack, best_profit, best_dist,
                                                                                             distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
 
-    return best_solution_route, best_solution_knapsack, best_profit, best_dist
+        print("Best: " + str(round(best_profit, 2)))
+        print("Local: " + str(round(local_profit, 2)))
+        if local_profit != best_profit:
+            current = time.time()
+            best_time = current - start
+
+        current = time.time()
+
+    return best_solution_route, best_solution_knapsack, best_profit, best_dist, best_time
 
 def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances):
     ttp_data = ttp_data_original.copy()
@@ -402,18 +419,19 @@ def main():
     exatoRoute, exatoKnapsack = gurobiReader(probType, knapType, numItems, dimension)
     exatoDist, exatoLucro = evaluate_solution_exata(exatoRoute, exatoKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
     print("Solução exata a bater:")
-    print("Lucro: " + str(exatoLucro))
-    print("Tempo: " + str(exatoDist))
+    print("Lucro: " + str(round(exatoLucro, 2)))
+    print("Tempo: " + str(round(exatoDist, 2)))
 
-    num_iterations = 100
+    num_iterations = 1000
     alpha = 3
 
-    solutionRoute, solutionKnapsack, profit, dist = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef)
+    solutionRoute, solutionKnapsack, profit, dist, best_time = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef)
     print("Melhor solução encontrada:")
     print("Rota: " + str(solutionRoute))
     print("Mochila: " + str(solutionKnapsack))
-    print("Lucro: " + str(profit))
-    print("Tempo: " + str(dist))
+    print("Lucro: " + str(round(profit, 2)))
+    print("Tempo: " + str(round(dist, 2)))
+    print("Melhor solução encontrada em " + str(round(best_time, 2)) + " segundos")
 
 if __name__ == "__main__":
     main()

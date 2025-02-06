@@ -30,3 +30,14 @@ ficar cheia
 -> RVND na busca local: usa um K aleatório, sendo que este K possui, por exemplo, 3 heurísticas diferentes
 -> Cada heurística é testada, se der um resultado melhor, reinicia a lista L de heurísticas, senão, remove
 a heurística testada e testa outra.
+
+-> 10 min rodando: ao invés de repetir por n iterações, deixo um while
+-> Esse while vai pegar a diferença de tempo entre o começo dos cálculos e o cálculo atual
+-> Crio nova variável para salvar a diferença de tempo para o melhor resultado
+
+RPDb -> ((S - BKS)/BKS) * (-100)  =>  Melhor RPD (da melhor solução)
+S -> Solução (no caso do RPDb, seria S*, a melhor solução)
+BKS -> Best Known Solution
+RPDa -> MEDIA(RPDi)
+
+alpha aleatório
