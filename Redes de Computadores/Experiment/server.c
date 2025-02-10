@@ -8,7 +8,6 @@
 #include <sys/time.h>
 #include "rdt.h"
 
-// Porta padrão
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
@@ -24,13 +23,12 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Configurar endereço do servidor
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(PORT);
 
-    // Vincular o socket para o endereço IP
+    // Vincular o socket
     if (bind(sockfd, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("Bind Failure");
         exit(EXIT_FAILURE);
@@ -38,35 +36,40 @@ int main() {
 
     printf("Servidor iniciado na porta %d...\n", PORT);
 
-    // Main Loop
+    // Inicializa a janela de recepção
+    init_recv_window();
+
     while (1) {
-        // Receive
         int recv_len = rdt_recv(sockfd, buffer, BUFFER_SIZE, &client_addr);
 
-        //Erros
-		if (recv_len < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				printf("Timeout ao receber dados\n");
-				continue;
-			} else {
-				perror("Falha no rdt (recv)");
-				continue;
-			}
-		}
+        if (recv_len < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                printf("Timeout ao receber dados\n");
+                continue;
+            } else {
+                perror("Falha no rdt (recv)");
+                continue;
+            }
+        }
 
-        // Ajuste da mensagem
         buffer[recv_len] = '\0';
         printf("Mensagem recebida: %s\n", buffer);
 
-        // Preparar e enviar resposta ao cliente
-        char response[BUFFER_SIZE] = "Sucesso";
-        
-        if (rdt_send(sockfd, response, strlen(response), &client_addr) < 0) {
-            perror("Falha no rdt (send)");
+        // Processar as mensagens recebidas
+        char *token = strtok(buffer, "\n");
+        while (token != NULL) {
+            printf("Processando mensagem: %s\n", token);
+
+            // Preparar resposta
+            char response[BUFFER_SIZE] = "Sucesso";
+            if (rdt_send(sockfd, response, strlen(response), &client_addr) < 0) {
+                perror("Falha no rdt (send)");
+            }
+
+            token = strtok(NULL, "\n");
         }
     }
 
-    // Fechar file descriptor do socket
     close(sockfd);
     return 0;
 }
