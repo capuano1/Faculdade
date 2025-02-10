@@ -118,7 +118,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
             return ERROR;
         }
     }
-
+    int retry = 0;
     // Aguarda pelo ACK
     while (send_window.base < send_window.next_seqnum) {
         timeout.tv_sec = 2;
@@ -127,7 +127,12 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
         FD_SET(sockfd, &read_fds);
         int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
 
-        if (ret == 0) {
+        if (retry == 5) {
+            printf("Did not receive ACK after 5 retries. Server probably got the message, but might have lost packets\n");
+            break;
+        }
+        else if (ret == 0 && retry < 5) {
+            retry++;
             // Timeout, retransmite os pacotes na janela
             printf("Timeout: retransmitindo pacotes...\n");
             for (int i = send_window.base; i < send_window.next_seqnum; i++) {
