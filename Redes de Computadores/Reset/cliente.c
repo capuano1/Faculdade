@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE];
 
-    // Criar socket UDP
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("Falha ao criar socket");
         exit(EXIT_FAILURE);
@@ -30,7 +29,7 @@ int main(int argc, char *argv[]) {
     server_addr.sin_port = htons(atoi(argv[2]));
     
     if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0) {
-        perror("Endereço inválido / Endereço não suportado");
+        perror("Endereço inválido não suportado");
         exit(EXIT_FAILURE);
     }
 
@@ -47,13 +46,13 @@ int main(int argc, char *argv[]) {
 
 		int retries = 0;
 		int max_retries = 5;
-		int timeout = 1000; // 1 segundo inicial
+		int timeout = 1000;
 
 		while (retries < max_retries) {
 			if (rdt_send(sockfd, buffer, strlen(buffer), &server_addr) < 0) {
 				perror("rdt_send falhou");
 				usleep(timeout * 1000);
-				timeout *= 2; // Backoff exponencial
+				timeout *= 2;
 				retries++;
 			} else {
 				break;
@@ -65,7 +64,6 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		// Receber resposta
 		char response[BUFFER_SIZE];
 		struct sockaddr_in from_addr;
 		socklen_t from_len = sizeof(from_addr);

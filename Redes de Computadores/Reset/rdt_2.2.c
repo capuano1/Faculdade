@@ -11,30 +11,46 @@ int biterror_inject = FALSE;
 hseq_t _snd_seqnum = 1;
 hseq_t _rcv_seqnum = 1;
 
-unsigned short checksum(unsigned short *buf, int nbytes){
-	register long sum;
-	sum = 0;
-	while (nbytes > 1) {
-		sum += *(buf++);
-		nbytes -= 2;
-	}
-	if (nbytes == 1)
-		sum += *(unsigned short *) buf;
-	while (sum >> 16)
-		sum = (sum & 0xffff) + (sum >> 16);
-	return (unsigned short) ~sum;
+unsigned short checksum(unsigned short *buf, int nbytes) {
+    register long sum = 0;
+    printf("Tamanho do buffer: %d\n", nbytes); // Mensagem de depuração
+
+    // Adicionar os elementos 16 bits (2 bytes) de cada vez ao somatório
+    while (nbytes > 1) {
+        sum += *(buf++);
+        printf("Somatório parcial: %ld\n", sum); // Mensagem de depuração
+        nbytes -= 2;
+    }
+
+    // Se houver um byte remanescente, adicioná-lo
+    if (nbytes == 1) {
+        sum += *(unsigned char *) buf;
+        printf("Somatório com byte extra: %ld\n", sum); // Mensagem de depuração
+    }
+
+    // Adicionar os carry-overs até que não haja mais
+    while (sum >> 16) {
+        sum = (sum & 0xffff) + (sum >> 16);
+    }
+
+    printf("Somatório final: %ld\n", sum); // Mensagem de depuração
+    // Retornar o complemento de 1 do somatório
+    return (unsigned short) ~sum;
 }
 
-int iscorrupted(pkt *pr){
-	pkt pl = *pr;
-	pl.h.csum = 0;
-	unsigned short csuml;
-	csuml = checksum((void *)&pl, pl.h.pkt_size);
-	if (csuml != pr->h.csum){
-		return TRUE;
-	}
-	return FALSE;
+
+int iscorrupted(pkt *pr) {
+    pkt pl = *pr;
+    pl.h.csum = 0;
+    unsigned short csuml;
+    csuml = checksum((unsigned short *)&pl, pl.h.pkt_size);
+    printf("Checksum calculado: %u, Checksum esperado: %u\n", csuml, pr->h.csum);  // Mensagem de depuração
+    if (csuml != pr->h.csum) {
+        return TRUE;
+    }
+    return FALSE;
 }
+
 
 int make_pkt(pkt *p, htype_t type, hseq_t seqnum, void *msg, int msg_len) {
 	if (msg_len > MAX_MSG_LEN) {
@@ -76,34 +92,25 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
 
 resend:
+    timeout.tv_sec = 2;
+    timeout.tv_usec = 0;
+    FD_ZERO(&read_fds);
+    FD_SET(sockfd, &read_fds);
+    int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
     ns = sendto(sockfd, &p, p.h.pkt_size, 0,
                 (struct sockaddr *)dst, sizeof(struct sockaddr_in));
+    if (ret == 0) {
+        printf("rdt_send: timeout, retransmitindo pacote...\n");
+        goto resend;
+    } else if (ret < 0) {
+        perror("rdt_send: select()");
+        return ERROR;
+    }
     if (ns < 0) {
         perror("rdt_send: sendto(PKT_DATA):");
         return ERROR;
     }
 
-    // Configura o timeout
-    timeout.tv_sec = 2;  // Timeout de 2 segundos
-    timeout.tv_usec = 0;
-
-    // Configura o descritor de arquivo para select()
-    FD_ZERO(&read_fds);
-    FD_SET(sockfd, &read_fds);
-
-    // Aguarda por dados no socket ou timeout
-    int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
-    if (ret == 0) {
-        // Timeout ocorreu
-        printf("rdt_send: timeout, retransmitindo pacote...\n");
-        goto resend;
-    } else if (ret < 0) {
-        // Erro no select()
-        perror("rdt_send: select()");
-        return ERROR;
-    }
-
-    // Dados disponíveis para leitura
     addrlen = sizeof(struct sockaddr_in);
     nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
                   (socklen_t *)&addrlen);
