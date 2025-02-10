@@ -37,7 +37,7 @@ int main() {
     printf("Servidor iniciado na porta %d...\n", PORT);
 
     // Inicializa a janela de recepção
-    init_recv_window();
+    initWindows();
 
     while (1) {
         int recv_len = rdt_recv(sockfd, buffer, BUFFER_SIZE, &client_addr);
@@ -52,21 +52,15 @@ int main() {
             }
         }
 
+        // Ajuste da mensagem
         buffer[recv_len] = '\0';
         printf("Mensagem recebida: %s\n", buffer);
 
-        // Processar as mensagens recebidas
-        char *token = strtok(buffer, "\n");
-        while (token != NULL) {
-            printf("Processando mensagem: %s\n", token);
-
-            // Preparar resposta
-            char response[BUFFER_SIZE] = "Sucesso";
-            if (rdt_send(sockfd, response, strlen(response), &client_addr) < 0) {
-                perror("Falha no rdt (send)");
-            }
-
-            token = strtok(NULL, "\n");
+        // Preparar e enviar resposta ao cliente
+        char response[BUFFER_SIZE] = "Sucesso";
+        
+        if (rdt_send(sockfd, response, strlen(response), &client_addr) < 0) {
+            perror("Falha no rdt (send)");
         }
     }
 
