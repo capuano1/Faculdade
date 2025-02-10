@@ -120,7 +120,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
     int retry = 0;
     // Aguarda pelo ACK
-    while (send_window.base < send_window.next_seqnum) {
+    while (send_window.base < send_window.next_seqnum && retry != 6) {
         timeout.tv_sec = 2;
         timeout.tv_usec = 0;
         FD_ZERO(&read_fds);
@@ -129,8 +129,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
 
         // Em inglês pois eu tenho consumido tanto conteúdo em inglês, além de dar aula do idioma, que estou começando a falar igual ao Supla
         // Do tell me se você ler isso, papito
+        // Se eu já reenviei a mensagem 5 vezes e não recebi um ACK, provavelmente o destinatário recebeu a mensagem, mas o ACK se perdeu
         if (retry == 5) {
             printf("Did not receive ACK after 5 retries. Server probably got the message, but might have lost packets\n");
+            retry++;
             break;
         }
         else if (ret == 0 && retry < 5) {

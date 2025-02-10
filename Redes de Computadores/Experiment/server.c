@@ -37,7 +37,7 @@ int main() {
     printf("Servidor iniciado na porta %d...\n", PORT);
 
     // Inicializa a janela de recepção
-    init_recv_window();
+    initWindows();
 
     while (1) {
         int recv_len = rdt_recv(sockfd, buffer, BUFFER_SIZE, &client_addr);
