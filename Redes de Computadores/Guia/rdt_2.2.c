@@ -4,8 +4,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdint.h>
-#include <time.h>
-#include <errno.h>
 
 #include "rdt.h"
 
@@ -63,23 +61,12 @@ int has_ackseq(pkt *p, hseq_t seqnum) {
 	return TRUE;
 }
 
-struct timespec subtractTime(struct timespec tsa, struct timespec tsp) {
-    struct timespec sampleRTT;
-    sampleRTT.tv_sec = tsa.tv_sec - tsp.tv_sec;
-    sampleRTT.tv_nsec = tsa.tv_nsec - tsp.tv_nsec;
-    if (sampleRTT.tv_nsec < 0) {
-        sampleRTT.tv_sec--;
-        sampleRTT.tv_nsec += 1000000000;
-    }
-    return sampleRTT;
-}
-
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     pkt p, ack;
-    struct timeval timeout;
-    struct timespec tsp, tsa, sampleRTT;
     struct sockaddr_in dst_ack;
     int ns, nr, addrlen;
+    fd_set read_fds;
+    struct timeval timeout;
 
     if (make_pkt(&p, PKT_DATA, _snd_seqnum, buf, buf_len) < 0)
         return ERROR;
@@ -89,13 +76,11 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
 
 resend:
-	timeout.tv_sec = 5;
-	timeout.tv_usec = 0;
-    clock_gettime(CLOCK_REALTIME, &tsp);
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
     ns = sendto(sockfd, &p, p.h.pkt_size, 0,
                 (struct sockaddr *)dst, sizeof(struct sockaddr_in));
-    // if (errno == 11) nr = 0;  => 62 error EAGAIN EWOULDBLOCK => Timer Expired
     if (errno == 11) {
         perror("rdt_send: Timeout");
         goto resend;
@@ -104,18 +89,10 @@ resend:
         perror("rdt_send: sendto(PKT_DATA):");
         return ERROR;
     }
+
     addrlen = sizeof(struct sockaddr_in);
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
-    // Bloqueante, mas precisa avisar o SO que existe um timeout => OK, setsockopt()
     nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
                   (socklen_t *)&addrlen);
-    clock_gettime(CLOCK_REALTIME, &tsa);
-    sampleRTT = subtractTime(tsa, tsp);
-    if (errno == 11) {
-        perror("rdt_send (recvfrom ACK): Timeout");
-        goto resend;
-    }
-    // Problema: com o estouro do temporizador, nr fica negativo e entra nesse if
     if (nr < 0) {
         perror("rdt_send: recvfrom(PKT_ACK)");
         return ERROR;
@@ -140,7 +117,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
     int nr, ns;
     int addrlen;
     struct timeval timeout;
-	
 
     memset(&p, 0, sizeof(hdr));
 
@@ -149,17 +125,15 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 
 rerecv:
     timeout.tv_sec = 5;
-	timeout.tv_usec = 0;
+    timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
     addrlen = sizeof(struct sockaddr_in);
     nr = recvfrom(sockfd, &p, sizeof(pkt), 0, (struct sockaddr *)src,
                   (socklen_t *)&addrlen);
-    
     if (errno == 11) {
         perror("rdt_recv: Timeout");
         goto rerecv;
     }
-    
     if (nr < 0) {
         perror("recvfrom():");
         return ERROR;
@@ -179,7 +153,7 @@ rerecv:
 
     int msg_size = p.h.pkt_size - sizeof(hdr);
     if (msg_size > buf_len) {
-        printf("rdt_rcv(): tamanho insuficiente de buffer (%d) para payload (%d).\n",
+        printf("rdt_rcv(): tamanho insuficiente de buf (%d) para payload (%d).\n",
                buf_len, msg_size);
         return ERROR;
     }
