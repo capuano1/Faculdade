@@ -78,7 +78,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     pkt p, ack;
     struct timeval timeout;
     struct timespec tsp, tsa, sampleRTT;
-	timeout.tv_sec = 2;
+	timeout.tv_sec = 5;
 	timeout.tv_usec = 0;
     struct sockaddr_in dst_ack;
     int ns, nr, addrlen;
@@ -95,23 +95,27 @@ resend:
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
     ns = sendto(sockfd, &p, p.h.pkt_size, 0,
                 (struct sockaddr *)dst, sizeof(struct sockaddr_in));
+    // if (errno == 11) nr = 0;  => 62 error EAGAIN EWOULDBLOCK => Timer Expired
+    if (errno == 11) {
+        perror("rdt_send: Timeout");
+        goto resend;
+    }
     if (ns < 0) {
         perror("rdt_send: sendto(PKT_DATA):");
         return ERROR;
     }
     addrlen = sizeof(struct sockaddr_in);
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
     // Bloqueante, mas precisa avisar o SO que existe um timeout => OK, setsockopt()
     nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
                   (socklen_t *)&addrlen);
     clock_gettime(CLOCK_REALTIME, &tsa);
     sampleRTT = subtractTime(tsa, tsp);
-    // if (errno == 11) nr = 0;  => 62 error EAGAIN EWOULDBLOCK => Timer Expired
-	// Problema: com o estouro do temporizador, nr fica negativo e entra nesse if
     if (errno == 11) {
-        perror("rdt_send: Timeout");
+        perror("rdt_send (recvfrom ACK): Timeout");
         goto resend;
     }
-    
+    // Problema: com o estouro do temporizador, nr fica negativo e entra nesse if
     if (nr < 0) {
         perror("rdt_send: recvfrom(PKT_ACK)");
         return ERROR;
@@ -136,7 +140,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
     int nr, ns;
     int addrlen;
     struct timeval timeout;
-	timeout.tv_sec = 2;
+	timeout.tv_sec = 5;
 	timeout.tv_usec = 0;
 
     memset(&p, 0, sizeof(hdr));
