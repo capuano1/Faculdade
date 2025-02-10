@@ -52,15 +52,21 @@ int main() {
             }
         }
 
-        // Ajuste da mensagem
         buffer[recv_len] = '\0';
         printf("Mensagem recebida: %s\n", buffer);
 
-        // Preparar e enviar resposta ao cliente
-        char response[BUFFER_SIZE] = "Sucesso";
-        
-        if (rdt_send(sockfd, response, strlen(response), &client_addr) < 0) {
-            perror("Falha no rdt (send)");
+        // Processar as mensagens recebidas
+        char *token = strtok(buffer, "\n");
+        while (token != NULL) {
+            printf("Processando mensagem: %s\n", token);
+
+            // Preparar resposta
+            char response[BUFFER_SIZE] = "Sucesso: " + token;
+            if (rdt_send(sockfd, response, strlen(response), &client_addr) < 0) {
+                perror("Falha no rdt (send)");
+            }
+
+            token = strtok(NULL, "\n");
         }
     }
 

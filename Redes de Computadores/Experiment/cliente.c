@@ -48,6 +48,22 @@ void send_buffered_messages(int sockfd, struct sockaddr_in *server_addr, char *s
     }
 }
 
+void receive_responses(int sockfd, struct sockaddr_in *server_addr) {
+    char response[BUFFER_SIZE];
+    struct sockaddr_in from_addr;
+    socklen_t from_len = sizeof(from_addr);
+
+    while (1) {
+        int recv_len = rdt_recv(sockfd, response, BUFFER_SIZE, &from_addr);
+        if (recv_len < 0) {
+            perror("RDT Falhou (recv)");
+            break;
+        }
+        response[recv_len] = '\0';
+        printf("Resposta do servidor: %s\n", response);
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Uso: %s <endereço_ip> <porta>\n", argv[0]);
@@ -106,6 +122,7 @@ int main(int argc, char *argv[]) {
 			enviar:
 			numMessages = 0;
             send_buffered_messages(sockfd, &server_addr, send_buffer, &send_buffer_len);
+			receive_responses(sockfd, &server_addr);
         }
     }
 
