@@ -193,6 +193,7 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
         iteration_knapsack = None
         iteration_profit = float('-inf')
         iteration_dist = 0
+        iteration_time = 0
         alpha = random.randint(3, 5)
         # Fase de Construção
         for i in range(10):
@@ -209,25 +210,31 @@ def grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed
                 file.write('\n' + str(best_solution_knapsack) + '\n')
                 file.write('\n' + str(best_dist) + '\n')
                 file.write('\n' + str(best_profit) + '\n') """
+            current = time.time()
+            if current - start <= maxTime and iteration_profit > best_profit or best_profit == float('-inf'):
+                best_solution_route = iteration_route.copy()
+                best_solution_knapsack = iteration_knapsack.copy()
+                best_profit = iteration_profit
+                best_dist = iteration_dist
+                best_time = current - start
 
         #print(solutionRoute)
         #print(solutionKnapsack)
 
         # Fase de Busca Local
-        iteration_route, iteration_knapsack, local_profit, iteration_dist = local_search(iteration_route, iteration_knapsack, iteration_profit, iteration_dist,
-                                                                                            distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+        iteration_route, iteration_knapsack, local_profit, iteration_dist, iteration_time = local_search(iteration_route, iteration_knapsack, iteration_profit, iteration_dist,
+                                                                                                        distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime)
         
-        print("Best: " + str(round(best_profit, 2)))
-        print("Local: " + str(round(local_profit, 2)))
+        # print("Best: " + str(round(best_profit, 2)))
+        # print("Local: " + str(round(local_profit, 2)))
 
+        
         if local_profit > best_profit or best_profit == float('-inf'):
-                current = time.time()
                 best_solution_route = iteration_route.copy()
                 best_solution_knapsack = iteration_knapsack.copy()
                 best_profit = local_profit
                 best_dist = iteration_dist
-                best_time = current - start
-
+                best_time = iteration_time
         current = time.time()
 
     return best_solution_route, best_solution_knapsack, best_profit, best_dist, best_time
@@ -296,30 +303,33 @@ def construct_solution(ttp_data_original, alpha, kp_capacity_original, distances
     # Assim ele organiza por cidade o índice e a parte de dentro pode só fazer um for mesmo (ou checar o ind deles)
     return solutionRoute, solutionKnapsack
 
-def local_search(solutionRoute, solutionKnapsack, profit, dist, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+def local_search(solutionRoute, solutionKnapsack, profit, dist, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime):
     # RVND => Temos 3 heurísticas diferentes: 2-OPT (TSP), Swap Cidades(TSP) e Trocar Bit (KP)
     # Se fosse orientado a objetos, eu poderia fazer um visitor aqui pra deixar a coisa mais fácil
     # Python também não tem switch case, afinal python é python
     totalDist = 0
     totalLucro = 0
+    totalTime = 0
     best_route = solutionRoute.copy()
     best_knapsack = solutionKnapsack.copy()
     best_profit = profit
     best_dist = dist
-    originalArray = [1, 2, 3]
+    best_time = 0
+    originalArray = [1, 3]
     iterationArray = originalArray.copy()
-    while iterationArray:
+    current = time.time()
+    while iterationArray and current - start < maxTime:
         heuristics = random.choice(iterationArray)
         # Uma função para cada heurística é melhor, ao invés de deixar uma função gigantesca aqui
         # Também facilita a manutenção do código e adição de outras heurísticas, assim como substituição de uma por outra
         if heuristics == 1:
-            solutionRoute = COPTIno(best_route, best_profit, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+            solutionRoute, totalTime = COPTIno(best_route, best_profit, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, 0)
             totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
         elif heuristics == 2:
-            solutionRoute = swapCidades(best_route, best_profit, best_knapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+            solutionRoute, totalTime = swapCidades(best_route, best_profit, best_knapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, 0)
             totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
         elif heuristics == 3:
-            solutionKnapsack = trocaBit(best_knapsack, len(solutionRoute), best_profit, best_route, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+            solutionKnapsack, totalTime = trocaBit(best_knapsack, len(solutionRoute), best_profit, best_route, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, 0)
             totalDist, totalLucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
 
         # Analiso o resultado: se for melhor, salvo e tento o looping novamente, se for pior, removo essa opção da lista de heurísticas e tento novamente
@@ -328,19 +338,26 @@ def local_search(solutionRoute, solutionKnapsack, profit, dist, distances, ttp_d
             best_knapsack = solutionKnapsack.copy()
             best_profit = totalLucro
             best_dist = totalDist
+            best_time = totalTime
             iterationArray = originalArray.copy()
+            current = time.time()
             continue
         else:
             iterationArray.remove(heuristics)
+            current = time.time()
             continue
 
-    return best_route, best_knapsack, best_profit, best_dist
+    return best_route, best_knapsack, best_profit, best_dist, best_time
 
-def COPTIno(solutionRoute, best_profit, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+def COPTIno(solutionRoute, best_profit, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, timer):
     size = len(solutionRoute)
+    bestTime = timer
+    current: float
     for i in range(1, size):
         for j in range(i+2, size):
             for k in range(j+2, size):
+                current = time.time()
+                if current - start > maxTime: return solutionRoute, bestTime
                 firstSubarray = solutionRoute[i:j]
                 secondSubarray = solutionRoute[j:k]
                 thirdSubarray = solutionRoute[k:]
@@ -354,61 +371,87 @@ def COPTIno(solutionRoute, best_profit, solutionKnapsack, distances, ttp_data, k
                 # permutações
                 first = solutionRoute[:i] + firstSubarray + secondSubarray + thirdReverse
                 dist, lucro = evaluate_solution(first, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(first, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(first, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
                 second = solutionRoute[:i] + firstSubarray + secondReverse + thirdSubarray
                 dist, lucro = evaluate_solution(second, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(second, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(second, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
                 third = solutionRoute[:i] + firstSubarray + secondReverse + thirdReverse
                 dist, lucro = evaluate_solution(third, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(third, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(third, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
                 fourth = solutionRoute[:i] + firstReverse + secondSubarray + thirdSubarray
                 dist, lucro = evaluate_solution(fourth, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(fourth, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(fourth, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
                 fifth = solutionRoute[:i] + firstReverse + secondSubarray + thirdReverse
                 dist, lucro = evaluate_solution(fifth, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(fifth, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(fifth, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
                 sixth = solutionRoute[:i] + firstReverse + secondReverse + thirdSubarray
                 dist, lucro = evaluate_solution(sixth, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(sixth, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(sixth, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
                 seventh = solutionRoute[:i] + firstReverse + secondReverse + thirdReverse
                 dist, lucro = evaluate_solution(seventh, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-                if lucro > best_profit: return COPTIno(seventh, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                if lucro > best_profit:
+                    current = time.time()
+                    return COPTIno(seventh, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, current - start)
 
             if (j >= size-2):
-                return solutionRoute
+                return solutionRoute, bestTime
 
-def swapCidades(solutionRoute, best_profit, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+def swapCidades(solutionRoute, best_profit, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, timer):
     size = len(solutionRoute) - 1
     original = solutionRoute.copy()
+    bestTime = timer
     lucro: float
+    current: float
     for i in range(1, size):
         for j in range(i+1, size):
+            current = time.time()
+            if current - start > maxTime: return original, bestTime
             aux = solutionRoute[i]
             solutionRoute[i] = solutionRoute[j]
             solutionRoute[j] = aux
             dist, lucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
             if lucro > best_profit:
-                return swapCidades(solutionRoute, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                current = time.time()
+                bestTime = current - start
+                return swapCidades(solutionRoute, lucro, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, bestTime)
             else: solutionRoute = original.copy()
-    return original
+    return original, bestTime
 
-def trocaBit(solutionKnapsack, size, best_profit, solutionRoute, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
+def trocaBit(solutionKnapsack, size, best_profit, solutionRoute, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, timer):
     original = solutionKnapsack.copy()
+    bestTime = timer
+    current: float
     for i in range(1, size-1):
         for j in range(0, len(solutionKnapsack[i])):
+            current = time.time()
+            if current - start > maxTime: return original, bestTime
             if solutionKnapsack[i][j] == 0: solutionKnapsack[i][j] = 1
             else: solutionKnapsack[i][j] = 0
             dist, lucro = evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
             if lucro > best_profit:
-                return trocaBit(solutionKnapsack, size, lucro, solutionRoute, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+                current = time.time()
+                bestTime = current - start
+                return trocaBit(solutionKnapsack, size, lucro, solutionRoute, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, start, maxTime, bestTime)
             else: solutionKnapsack = original.copy()
-    return original
+    return original, bestTime
 
 def evaluate_solution(solutionRoute, solutionKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio):
     # Simplesmente a equação
@@ -459,26 +502,38 @@ def evaluate_solution_exata(solutionRoute, solutionKnapsack, distances, ttp_data
 
 def main():
     ttp_input_file = ".\\Inst\\instancia.ttp"
+    best_values: list[float] = []
+    best_times: list[float] = []
 
-    ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef, probType, knapType, numItems, dimension = read_ttp_instance(ttp_input_file)
-    distances = calculate_distances(ttp_data)
+    for i in range(0, 5):
+        ttp_data, kp_capacity, min_speed, max_speed, rent_ratio, med_benef, probType, knapType, numItems, dimension = read_ttp_instance(ttp_input_file)
+        distances = calculate_distances(ttp_data)
 
-    exatoRoute, exatoKnapsack = gurobiReader(probType, knapType, numItems, dimension)
-    exatoDist, exatoLucro = evaluate_solution_exata(exatoRoute, exatoKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
-    print("Solução exata a bater:")
-    print("Lucro: " + str(round(exatoLucro, 2)))
-    print("Tempo: " + str(round(exatoDist, 2)))
+        exatoRoute, exatoKnapsack = gurobiReader(probType, knapType, numItems, dimension)
+        exatoDist, exatoLucro = evaluate_solution_exata(exatoRoute, exatoKnapsack, distances, ttp_data, kp_capacity, min_speed, max_speed, rent_ratio)
+        print("Solução exata a bater:")
+        print("Lucro: " + str(round(exatoLucro, 2)))
+        print("Tempo: " + str(round(exatoDist, 2)))
 
-    num_iterations = 1000
-    alpha = 3
+        num_iterations = 100
+        alpha = 3
 
-    solutionRoute, solutionKnapsack, profit, dist, best_time = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef)
-    print("Melhor solução encontrada:")
-    print("Rota: " + str(solutionRoute))
-    print("Mochila: " + str(solutionKnapsack))
-    print("Lucro: " + str(round(profit, 2)))
-    print("Tempo: " + str(round(dist, 2)))
-    print("Melhor solução encontrada em " + str(round(best_time, 2)) + " segundos")
+        solutionRoute, solutionKnapsack, profit, dist, best_time = grasp_ttp(ttp_data, distances, num_iterations, alpha, kp_capacity, min_speed, max_speed, rent_ratio, med_benef)
+        print("Melhor solução encontrada:")
+        print("Rota: " + str(solutionRoute))
+        print("Mochila: " + str(solutionKnapsack))
+        print("Lucro: " + str(round(profit, 2)))
+        print("Tempo: " + str(round(dist, 2)))
+        print("Melhor solução encontrada em " + str(round(best_time, 2)) + " segundos")
+        best_values.append(round(profit, 2))
+        best_times.append(round(best_time, 2))
+
+    with open("best.txt", 'w') as file:
+        file.write(str(best_values[0]) + " " + str(best_times[0]) + "\n")
+        file.write(str(best_values[1]) + " " + str(best_times[1]) + "\n")
+        file.write(str(best_values[2]) + " " + str(best_times[2]) + "\n")
+        file.write(str(best_values[3]) + " " + str(best_times[3]) + "\n")
+        file.write(str(best_values[4]) + " " + str(best_times[4]) + "\n")
 
 if __name__ == "__main__":
     main()

@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdint.h>
-#include <sys/time.h>
+#include <time.h>
 #include <errno.h>
 
 #include "rdt.h"
@@ -147,7 +147,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 rerecv:
 
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) perror("Error setting timer");
-    // Dados disponíveis para leitura
     addrlen = sizeof(struct sockaddr_in);
     nr = recvfrom(sockfd, &p, sizeof(pkt), 0, (struct sockaddr *)src,
                   (socklen_t *)&addrlen);
