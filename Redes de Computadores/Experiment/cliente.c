@@ -40,7 +40,6 @@ void send_buffered_messages(int sockfd, struct sockaddr_in *server_addr, char *s
 		int recv_len = rdt_recv(sockfd, response, BUFFER_SIZE, &from_addr);
 		if (recv_len < 0) {
 			perror("RDT Falhou (recv)");
-			continue;
 		}
 		response[recv_len] = '\0';
 
@@ -100,12 +99,12 @@ int main(int argc, char *argv[]) {
             send_buffer_len += strlen(buffer);
             send_buffer[send_buffer_len++] = '\n'; // Adiciona nova linha como separador
         } else {
-			numMessages = 0;
 			memcpy(send_buffer + send_buffer_len, buffer, strlen(buffer));
             send_buffer_len += strlen(buffer);
             send_buffer[send_buffer_len++] = '\n';
             // Envia o buffer acumulado se estiver cheio ou se tiverem 5 mensagens ou se o usuário quiser
 			enviar:
+			numMessages = 0;
             send_buffered_messages(sockfd, &server_addr, send_buffer, &send_buffer_len);
         }
     }
