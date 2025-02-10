@@ -127,6 +127,8 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
         FD_SET(sockfd, &read_fds);
         int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
 
+        // Em inglês pois eu tenho consumido tanto conteúdo em inglês, além de dar aula do idioma, que estou começando a falar igual ao Supla
+        // Do tell me se você ler isso, papito
         if (retry == 5) {
             printf("Did not receive ACK after 5 retries. Server probably got the message, but might have lost packets\n");
             break;
