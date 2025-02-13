@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     double media = 0, dp = 0;
     double temposReg[10];
     for (int i = 0; i < 10; i++) {
-        system("mpiexec -np 3 -genv I_MPI_PIN_DOMAIN=omp -genv OMP_NUM_THREADS=2 FinalMPIOMP-Tempo.exe");
+        system("mpiexec -np 4 -genv I_MPI_PIN_DOMAIN=omp -genv OMP_NUM_THREADS=3 FinalMPIOMP-Tempo.exe");
     }
     tempos = fopen("FinalMPIOMP-Tempo.txt", "r");
     for (int i = 0; i < 10; i++) {

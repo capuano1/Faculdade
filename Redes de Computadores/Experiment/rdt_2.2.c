@@ -30,22 +30,19 @@ void initWindows() {
 // Checksum
 unsigned short checksum(unsigned short *buf, int nbytes) {
     register long sum = 0;
-    //printf("Tamanho do buffer: %d\n", nbytes);
 
     // 2 bytes
     while (nbytes > 1) {
         sum += *(buf++);
-        //printf("Somatório parcial: %ld\n", sum);
         nbytes -= 2;
     }
 
-    // byte remanescente
+    // Remanescente
     if (nbytes == 1) {
         sum += *(unsigned char *) buf;
-        //printf("Somatório com byte extra: %ld\n", sum);
     }
 
-    // carry-over
+    // Carry-over
     while (sum >> 16) {
         sum = (sum & 0xffff) + (sum >> 16);
     }

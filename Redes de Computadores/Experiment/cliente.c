@@ -10,6 +10,7 @@
 #define BUFFER_SIZE 1024
 #define SEND_BUFFER_SIZE (BUFFER_SIZE * WINDOW_SIZE)
 
+// Envio das mensagens do buffer de mensagens
 void send_buffered_messages(int sockfd, struct sockaddr_in *server_addr, char *send_buffer, int *send_buffer_len) {
     if (*send_buffer_len > 0) {
         int retries = 0;
@@ -29,6 +30,7 @@ void send_buffered_messages(int sockfd, struct sockaddr_in *server_addr, char *s
 
         if (retries == max_retries) {
             printf("Máximo de tentativas (%d) excedido\n", max_retries);
+            return;
         }
 
         *send_buffer_len = 0; // Limpa o buffer de envio
@@ -48,6 +50,7 @@ void send_buffered_messages(int sockfd, struct sockaddr_in *server_addr, char *s
     }
 }
 
+// Receber respostas do servidor após envio das mensagens do buffer
 void receive_responses(int sockfd, struct sockaddr_in *server_addr) {
     char response[BUFFER_SIZE];
     struct sockaddr_in from_addr;
@@ -86,6 +89,7 @@ int main(int argc, char *argv[]) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(argv[2]));
     
+	// Endereço IP
     if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0) {
         perror("Invalid or Unsupported Address");
         exit(EXIT_FAILURE);
