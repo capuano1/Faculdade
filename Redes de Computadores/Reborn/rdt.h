@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdint.h>
+#include <time.h>
 
 #define MAX_MSG_LEN 1000
 #define ERROR -1
@@ -24,17 +25,17 @@ typedef uint8_t  htype_t;
 #define PKT_DATA 1
 
 struct hdr {
-	hseq_t  pkt_seq;
-	hsize_t pkt_size;
-	htype_t pkt_type;
-	hcsum_t csum;
+    hseq_t  pkt_seq;
+    hsize_t pkt_size;
+    htype_t pkt_type;
+    hcsum_t csum;
 };
 
 typedef struct hdr hdr;
 
 struct pkt {
-	hdr h;
-	unsigned char msg[MAX_MSG_LEN];
+    hdr h;
+    unsigned char msg[MAX_MSG_LEN];
 };
 typedef struct pkt pkt;
 
@@ -43,7 +44,11 @@ typedef struct {
     int base;
     int next_seqnum;
     int window_size;
+    int ack_received[WINDOW_SIZE];  // Verificar se ACK foi recebido
+    struct timespec timers[WINDOW_SIZE];  // Temporizadores por pacote (repetição seletiva)
+    int in_use[WINDOW_SIZE];  // Está em uso?
 } window_t;
+
 
 unsigned short checksum(unsigned short *, int);
 int iscorrupted(pkt *);
@@ -52,5 +57,8 @@ int has_ackseq(pkt *, hseq_t);
 int rdt_send(int, void *, int, struct sockaddr_in *);
 int has_dataseqnum(pkt *, hseq_t);
 int rdt_recv(int, void *, int, struct sockaddr_in *);
+void initWindows();
+void start_timer(int seqnum);
+int is_timeout(int seqnum);
 
 #endif

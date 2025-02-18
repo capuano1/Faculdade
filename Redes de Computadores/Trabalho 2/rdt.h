@@ -13,6 +13,7 @@
 #define TRUE 1
 #define FALSE 0
 #define SUCCESS 0
+#define WINDOW_SIZE 5
 
 typedef uint16_t hsize_t;
 typedef uint16_t hcsum_t;
@@ -36,6 +37,13 @@ struct pkt {
 	unsigned char msg[MAX_MSG_LEN];
 };
 typedef struct pkt pkt;
+
+typedef struct {
+    pkt packets[WINDOW_SIZE];
+    int base;
+    int next_seqnum;
+    int window_size;
+} window_t;
 
 unsigned short checksum(unsigned short *, int);
 int iscorrupted(pkt *);

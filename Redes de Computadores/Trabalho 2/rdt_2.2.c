@@ -12,26 +12,37 @@ int biterror_inject = FALSE;
 // Sequências de envio e recebimento
 hseq_t _snd_seqnum = 1;
 hseq_t _rcv_seqnum = 1;
+// Janelas de Transmissão
+window_t send_window;
+window_t recv_window;
+
+void initWindows() {
+    send_window.base = 0;
+    send_window.next_seqnum = 0;
+    send_window.window_size = WINDOW_SIZE;
+    memset(send_window.packets, 0, sizeof(send_window.packets));
+    recv_window.base = 0;
+    recv_window.next_seqnum = 0;
+    recv_window.window_size = WINDOW_SIZE;
+    memset(recv_window.packets, 0, sizeof(recv_window.packets));
+}
 
 // Checksum
 unsigned short checksum(unsigned short *buf, int nbytes) {
     register long sum = 0;
-    //printf("Tamanho do buffer: %d\n", nbytes);
 
     // 2 bytes
     while (nbytes > 1) {
         sum += *(buf++);
-        //printf("Somatório parcial: %ld\n", sum);
         nbytes -= 2;
     }
 
-    // byte remanescente
+    // Remanescente
     if (nbytes == 1) {
         sum += *(unsigned char *) buf;
-        //printf("Somatório com byte extra: %ld\n", sum);
     }
 
-    // carry-over
+    // Carry-over
     while (sum >> 16) {
         sum = (sum & 0xffff) + (sum >> 16);
     }
@@ -88,57 +99,68 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     fd_set read_fds;
     struct timeval timeout;
 
-    // Cria Pacote
-    if (make_pkt(&p, PKT_DATA, _snd_seqnum, buf, buf_len) < 0)
-        return ERROR;
-    // Zerar mensagem se tiver erro de bit
-    if (biterror_inject) {
-        memset(p.msg, 0, MAX_MSG_LEN);
+    if ((send_window.next_seqnum - send_window.base) < send_window.window_size) {
+        // Cria o pacote de dados
+        if (make_pkt(&p, PKT_DATA, send_window.next_seqnum, buf, buf_len) < 0)
+            return ERROR;
+
+        // Armazena o pacote na janela de transmissão
+        send_window.packets[send_window.next_seqnum % send_window.window_size] = p;
+        send_window.next_seqnum++;
+
+        // Envia o pacote de dados
+        ns = sendto(sockfd, &p, p.h.pkt_size, 0, (struct sockaddr *)dst, sizeof(struct sockaddr_in));
+        if (ns < 0) {
+            perror("sendto(rdt_send) error:");
+            return ERROR;
+        }
+    }
+    int retry = 0;
+    // Aguarda pelo ACK
+    while (send_window.base < send_window.next_seqnum && retry != 6) {
+        timeout.tv_sec = 2;
+        timeout.tv_usec = 0;
+        FD_ZERO(&read_fds);
+        FD_SET(sockfd, &read_fds);
+        int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
+
+        // Em inglês pois eu tenho consumido tanto conteúdo em inglês, além de dar aula do idioma, que estou começando a falar igual ao Supla
+        // Do tell me se você ler isso, papito
+        // Se eu já reenviei a mensagem 5 vezes e não recebi um ACK, provavelmente o destinatário recebeu a mensagem, mas o ACK se perdeu
+        if (retry == 5) {
+            printf("Did not receive ACK after 5 retries. Server probably got the message, but might have lost packets\n");
+            retry++;
+            break;
+        }
+        else if (ret == 0 && retry < 5) {
+            retry++;
+            // Timeout, retransmite os pacotes na janela
+            printf("Timeout: retransmitindo pacotes...\n");
+            for (int i = send_window.base; i < send_window.next_seqnum; i++) {
+                p = send_window.packets[i % send_window.window_size];
+                ns = sendto(sockfd, &p, p.h.pkt_size, 0, (struct sockaddr *)dst, sizeof(struct sockaddr_in));
+                if (ns < 0) {
+                    perror("sendto(rdt_send) error:");
+                    return ERROR;
+                }
+            }
+        } else if (ret < 0) {
+            perror("select() error");
+            return ERROR;
+        } else if (FD_ISSET(sockfd, &read_fds)) {
+            addrlen = sizeof(struct sockaddr_in);
+            nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack, (socklen_t *)&addrlen);
+            if (nr < 0) {
+                perror("ACK recvfrom(rdt_send) error");
+                return ERROR;
+            }
+
+            if (!iscorrupted(&ack) && has_ackseq(&ack, send_window.base)) {
+                send_window.base++;
+            }
+        }
     }
 
-// Send Loop
-resend:
-    // Timeout
-    timeout.tv_sec = 2;
-    timeout.tv_usec = 0;
-
-    // Configurar FDs e adicionar socket aos FDs
-    FD_ZERO(&read_fds); FD_SET(sockfd, &read_fds);
-
-    // Select -> timeout (setsockopt() não funciona de jeito nenhum)
-    int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
-
-    // Send -> Envia pacote e relata erros caso não consiga
-    ns = sendto(sockfd, &p, p.h.pkt_size, 0,
-                (struct sockaddr *)dst, sizeof(struct sockaddr_in));
-    if (ret == 0) {
-        printf("Timeout: tentando retransmitir pacote...\n");
-        goto resend;
-    } else if (ret < 0) {
-        perror("select() error");
-        return ERROR;
-    }
-    if (ns < 0) {
-        perror("sendto(rdt_send) error:");
-        return ERROR;
-    }
-
-    // Recepção do ACK
-    addrlen = sizeof(struct sockaddr_in);
-    nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
-                  (socklen_t *)&addrlen);
-    if (nr < 0) {
-        perror("ACK recvfrom(rdt_send) error");
-        return ERROR;
-    }
-
-    // Verifica ACK
-    if (iscorrupted(&ack) || !has_ackseq(&ack, _snd_seqnum)) {
-        //printf("iscorrupted or !has_ackseq error\n");
-        goto resend;
-    }
-
-    _snd_seqnum++;
     return buf_len;
 }
 
@@ -157,73 +179,81 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
     fd_set read_fds;
     struct timeval timeout;
 
-    // Inicializar pacote vazio
     memset(&p, 0, sizeof(hdr));
 
-    // Criar ACK
-    if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0) < 0)
+    if (make_pkt(&ack, PKT_ACK, recv_window.base - 1, NULL, 0) < 0)
         return ERROR;
 
-// recv loop
 rerecv:
-    // Timeout
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
 
-    // Configura FDs e adiciona socket aos FDs
-    FD_ZERO(&read_fds); FD_SET(sockfd, &read_fds);
+    FD_ZERO(&read_fds);
+    FD_SET(sockfd, &read_fds);
 
-    // select() -> Timeout (ao invés de setsockopt, que não estava funcionando)
     int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
     if (ret == 0) {
         printf("Nenhum pacote recebido\n");
         return ERROR;
     } else if (ret < 0) {
-        // Erro no select()
         perror("select() error");
         return ERROR;
     }
 
-    // Recebe pacote
     addrlen = sizeof(struct sockaddr_in);
-    nr = recvfrom(sockfd, &p, sizeof(pkt), 0, (struct sockaddr *)src,
-                  (socklen_t *)&addrlen);
+    nr = recvfrom(sockfd, &p, sizeof(pkt), 0, (struct sockaddr *)src, (socklen_t *)&addrlen);
     if (nr < 0) {
         perror("recvfrom() error");
         return ERROR;
     }
 
-    // Verifica se pacote está corrompido ou número de sequência não corresponde
-    if (iscorrupted(&p) || !has_dataseqnum(&p, _rcv_seqnum)) {
-        //printf("rdt_recv: iscorrupted || has_dataseqnum \n");
-        ns = sendto(sockfd, &ack, ack.h.pkt_size, 0,
-                    (struct sockaddr *)src, (socklen_t)sizeof(struct sockaddr_in));
+    if (!iscorrupted(&p)) {
+        int seq_index = p.h.pkt_seq % recv_window.window_size;
+
+        if (has_dataseqnum(&p, recv_window.base)) {
+            // Pacote esperado
+            memcpy(buf, p.msg, p.h.pkt_size - sizeof(hdr));
+            recv_window.base++;
+        } else if (p.h.pkt_seq < recv_window.base + recv_window.window_size && p.h.pkt_seq >= recv_window.base) {
+            // Pacote dentro da janela, mas fora de ordem
+            recv_window.packets[seq_index] = p;
+        }
+
+        // Enviar ACK
+        if (make_pkt(&ack, PKT_ACK, p.h.pkt_seq, NULL, 0) < 0)
+            return ERROR;
+
+        ns = sendto(sockfd, &ack, ack.h.pkt_size, 0, (struct sockaddr *)src, (socklen_t)sizeof(struct sockaddr_in));
         if (ns < 0) {
-            perror("sendto(rdt_recv) error");
+            perror("ACK sendto(rdt_recv) error");
             return ERROR;
         }
-        goto rerecv;
+
+        // Entregar pacotes em ordem
+        while (recv_window.base < recv_window.next_seqnum) {
+            seq_index = recv_window.base % recv_window.window_size;
+            if (recv_window.packets[seq_index].h.pkt_seq == recv_window.base) {
+                int msg_size = recv_window.packets[seq_index].h.pkt_size - sizeof(hdr);
+                if (msg_size > buf_len) {
+                    printf("Insuficient size: (%d) buffer for (%d).\n", buf_len, msg_size);
+                    return ERROR;
+                }
+                memcpy(buf, recv_window.packets[seq_index].msg, msg_size);
+                recv_window.base++;
+            } else {
+                break;
+            }
+        }
+    } else {
+        // Enviar último ACK se o pacote recebido estiver corrompido
+        if (make_pkt(&ack, PKT_ACK, recv_window.base - 1, NULL, 0) < 0)
+            return ERROR;
+        ns = sendto(sockfd, &ack, ack.h.pkt_size, 0, (struct sockaddr *)src, (socklen_t)sizeof(struct sockaddr_in));
+        if (ns < 0) {
+            perror("ACK sendto(rdt_recv) error");
+            return ERROR;
+        }
     }
 
-    // Processa mensagem recebida
-    int msg_size = p.h.pkt_size - sizeof(hdr);
-    if (msg_size > buf_len) {
-        printf("Insuficient size: (%d) buffer for (%d).\n",
-               buf_len, msg_size);
-        return ERROR;
-    }
-    memcpy(buf, p.msg, msg_size);
-
-    // Enviar ACK
-    if (make_pkt(&ack, PKT_ACK, p.h.pkt_seq, NULL, 0) < 0)
-        return ERROR;
-
-    ns = sendto(sockfd, &ack, ack.h.pkt_size, 0,
-                (struct sockaddr *)src, (socklen_t)sizeof(struct sockaddr_in));
-    if (ns < 0) {
-        perror("ACK sendto(rdt_recv) error");
-        return ERROR;
-    }
-    _rcv_seqnum++;
     return p.h.pkt_size - sizeof(hdr);
 }
