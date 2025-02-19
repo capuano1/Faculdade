@@ -34,12 +34,15 @@ void save_file(int sockfd, struct sockaddr_in *client_addr) {
             break;
         }
 
-        fwrite(buffer, 1, bytes_received, file);
+        if (bytes_received > 0) {
+            fwrite(buffer, 1, bytes_received, file);
+        }
     }
 
     fclose(file);
     printf("Arquivo salvo com sucesso: arquivo_recebido\n");
 }
+
 
 int main() {
     int sockfd;

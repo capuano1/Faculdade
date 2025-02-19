@@ -135,10 +135,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
                 send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
                 send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
                 if (ack.h.pkt_seq == send_window.base) {
-                    send_window.base = (send_window.base + 1) % send_window.window_size;
+                    send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
                     while (send_window.in_use[send_window.base % send_window.window_size]) {
-                        printf("Base da janela avançada para %d\n", (send_window.base + 1) % send_window.window_size); // AQUI
-                        send_window.base = (send_window.base + 1) % send_window.window_size;
+                        printf("Base da janela avançada para %d\n", ((send_window.base + 1) % (2*WINDOW_SIZE))); // AQUI
+                        send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
                     }
                 }
             } else {
@@ -210,10 +210,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
                 send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
                 send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
                 if (ack.h.pkt_seq == send_window.base) {
-                    send_window.base = (send_window.base + 1) % send_window.window_size;
+                    send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
                     while (send_window.in_use[send_window.base % send_window.window_size]) {
-                        printf("Base da janela avançada para %d\n", (send_window.base + 1) % send_window.window_size); // AQUI
-                        send_window.base = (send_window.base + 1) % send_window.window_size;
+                        printf("Base da janela avançada para %d\n", ((send_window.base + 1) % (2*WINDOW_SIZE))); // AQUI
+                        send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
                     }
                 }
             } else {
@@ -276,7 +276,7 @@ rerecv:
         if (has_dataseqnum(&p, recv_window.base)) {
             // Pacote esperado
             memcpy(buf, p.msg, p.h.pkt_size - sizeof(hdr));
-            recv_window.base = (recv_window.base + 1) % recv_window.window_size;
+            recv_window.base = ((recv_window.base + 1) % (2*WINDOW_SIZE));
         } else if (p.h.pkt_seq < recv_window.base + recv_window.window_size && p.h.pkt_seq >= recv_window.base) {
             // Pacote dentro da janela, mas fora de ordem
             recv_window.packets[seq_index] = p;
@@ -292,7 +292,7 @@ rerecv:
             return ERROR;
         }
 
-                // Entregar pacotes em ordem
+        // Entregar pacotes em ordem
         while (recv_window.base != recv_window.next_seqnum) {
             int seq_index = recv_window.base % recv_window.window_size;
             if (recv_window.packets[seq_index].h.pkt_seq == recv_window.base) {
@@ -302,7 +302,7 @@ rerecv:
                     return ERROR;
                 }
                 memcpy(buf, recv_window.packets[seq_index].msg, msg_size);
-                recv_window.base = (recv_window.base + 1) % recv_window.window_size;
+                recv_window.base = ((recv_window.base + 1) % (2*WINDOW_SIZE));
             } else {
                 break;
             }
@@ -320,3 +320,4 @@ rerecv:
 
     return p.h.pkt_size - sizeof(hdr);
 }
+

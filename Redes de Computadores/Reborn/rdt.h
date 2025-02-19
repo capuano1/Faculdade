@@ -14,7 +14,7 @@
 #define TRUE 1
 #define FALSE 0
 #define SUCCESS 0
-#define WINDOW_SIZE 5
+#define WINDOW_SIZE 200
 
 typedef uint16_t hsize_t;
 typedef uint16_t hcsum_t;
