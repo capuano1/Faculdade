@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdint.h>
+#include <fcntl.h>
 
 #include "rdt.h"
 
@@ -120,8 +122,20 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     fd_set read_fds;
     struct timeval timeout;
 
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags < 0) {
+        perror("fcntl F_GETFL failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+    flags = (flags | O_NONBLOCK);
+    if (fcntl(sockfd, F_SETFL, flags) < 0) {
+        perror("fcntl F_SETFL failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
     while ((send_window.next_seqnum - send_window.base + WINDOW_SIZE) % WINDOW_SIZE >= WINDOW_SIZE) {
-        // Espera até que um espaço na janela seja liberado
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
         FD_ZERO(&read_fds);
@@ -130,19 +144,22 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
         if (ret > 0 && FD_ISSET(sockfd, &read_fds)) {
             addrlen = sizeof(struct sockaddr_in);
             nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack, (socklen_t *)&addrlen);
-            if (nr > 0 && !iscorrupted(&ack) && has_ackseq(&ack, ack.h.pkt_seq)) {
-                printf("ACK recebido para o pacote %d\n", ack.h.pkt_seq);
-                send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
-                send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
-                if (ack.h.pkt_seq == send_window.base) {
-                    send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
-                    while (send_window.in_use[send_window.base % send_window.window_size]) {
-                        printf("Base da janela avançada para %d\n", ((send_window.base + 1) % (2*WINDOW_SIZE))); // AQUI
+            while (nr > 0) {
+                if (nr > 0 && !iscorrupted(&ack) && has_ackseq(&ack, ack.h.pkt_seq)) {
+                    printf("ACK recebido para o pacote %d\n", ack.h.pkt_seq);
+                    send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
+                    send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
+                    if (ack.h.pkt_seq == send_window.base) {
                         send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
+                        while (send_window.in_use[send_window.base % send_window.window_size]) {
+                            printf("Base da janela avançada para %d\n", ((send_window.base + 1) % (2*WINDOW_SIZE))); // AQUI
+                            send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
+                        }
                     }
+                } else {
+                    //printf("Pacote ACK corrompido ou inválido\n");
                 }
-            } else {
-                printf("Pacote ACK corrompido ou inválido\n");
+                nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack, (socklen_t *)&addrlen);
             }
         }
     }
@@ -200,24 +217,22 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
         } else if (FD_ISSET(sockfd, &read_fds)) {
             addrlen = sizeof(struct sockaddr_in);
             nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack, (socklen_t *)&addrlen);
-            if (nr < 0) {
-                perror("ACK recvfrom(rdt_send) error");
-                return ERROR;
-            }
-
-            if (!iscorrupted(&ack) && has_ackseq(&ack, ack.h.pkt_seq)) {
-                printf("ACK recebido para o pacote %d\n", ack.h.pkt_seq);
-                send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
-                send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
-                if (ack.h.pkt_seq == send_window.base) {
-                    send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
-                    while (send_window.in_use[send_window.base % send_window.window_size]) {
-                        printf("Base da janela avançada para %d\n", ((send_window.base + 1) % (2*WINDOW_SIZE))); // AQUI
+            while (nr > 0) {
+                if (nr > 0 && !iscorrupted(&ack) && has_ackseq(&ack, ack.h.pkt_seq)) {
+                    printf("ACK recebido para o pacote %d\n", ack.h.pkt_seq);
+                    send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
+                    send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
+                    if (ack.h.pkt_seq == send_window.base) {
                         send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
+                        while (send_window.in_use[send_window.base % send_window.window_size]) {
+                            printf("Base da janela avançada para %d\n", ((send_window.base + 1) % (2*WINDOW_SIZE))); // AQUI
+                            send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
+                        }
                     }
+                } else {
+                    //printf("Pacote ACK corrompido ou inválido\n");
                 }
-            } else {
-                printf("Pacote ACK corrompido ou inválido\n");
+                nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack, (socklen_t *)&addrlen);
             }
         }
     }
@@ -276,7 +291,7 @@ rerecv:
         if (has_dataseqnum(&p, recv_window.base)) {
             // Pacote esperado
             memcpy(buf, p.msg, p.h.pkt_size - sizeof(hdr));
-            recv_window.base = (recv_window.base + 1) % recv_window.window_size;
+            recv_window.base = ((recv_window.base + 1) % (2*WINDOW_SIZE));
         } else if (p.h.pkt_seq < recv_window.base + recv_window.window_size && p.h.pkt_seq >= recv_window.base) {
             // Pacote dentro da janela, mas fora de ordem
             recv_window.packets[seq_index] = p;
@@ -292,7 +307,7 @@ rerecv:
             return ERROR;
         }
 
-                // Entregar pacotes em ordem
+        // Entregar pacotes em ordem
         while (recv_window.base != recv_window.next_seqnum) {
             int seq_index = recv_window.base % recv_window.window_size;
             if (recv_window.packets[seq_index].h.pkt_seq == recv_window.base) {
@@ -302,7 +317,7 @@ rerecv:
                     return ERROR;
                 }
                 memcpy(buf, recv_window.packets[seq_index].msg, msg_size);
-                recv_window.base = (recv_window.base + 1) % recv_window.window_size;
+                recv_window.base = ((recv_window.base + 1) % (2*WINDOW_SIZE));
             } else {
                 break;
             }
@@ -320,3 +335,4 @@ rerecv:
 
     return p.h.pkt_size - sizeof(hdr);
 }
+
