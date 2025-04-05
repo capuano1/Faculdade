@@ -136,6 +136,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
 
     while ((send_window.next_seqnum - send_window.base + WINDOW_SIZE) % WINDOW_SIZE >= WINDOW_SIZE) {
+        // Espera até que um espaço na janela seja liberado
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
         FD_ZERO(&read_fds);

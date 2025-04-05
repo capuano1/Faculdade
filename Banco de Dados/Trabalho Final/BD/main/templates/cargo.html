@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dados da Tabela</title>
+</head>
+<body>
+    <h1>Dados da Tabela</h1>
+    <table>
+        <tr>
+            <th>ID de Membro</th>
+            <th>Cargo</th>
+            <th>Equipe</th>
+            <th>Início do Cargo</th>
+            <th>Fim do Cargo</th>
+        </tr>
+        {% for dado in dados %}
+        <tr>
+            <td>{{ dado.membro_id }}</td>
+            <td>{{ dado.cargo }}</td>
+            <td>{{ dado.equipe }}</td>
+            <td>{{ dado.dataIni }}</td>
+            <td>{{ dado.dataFim }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
