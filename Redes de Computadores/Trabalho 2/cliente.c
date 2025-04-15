@@ -10,6 +10,7 @@
 #define BUFFER_SIZE 1000
 #define SEND_BUFFER_SIZE (BUFFER_SIZE * WINDOW_SIZE)
 
+// Envio do arquivo em partes
 void send_file(int sockfd, struct sockaddr_in *server_addr, const char *file_path) {
     FILE *file = fopen(file_path, "rb");
     if (file == NULL) {
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(argv[2]));
 
-    // Endereço IP
+    // Endereco IP
     if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0) {
         perror("Invalid or Unsupported Address");
         exit(EXIT_FAILURE);
