@@ -11,6 +11,7 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
+// Recebe o arquivo e salva
 void save_file(int sockfd, struct sockaddr_in *client_addr) {
     FILE *file = fopen("arquivo_recebido", "wb");
     if (file == NULL) {
@@ -49,7 +50,7 @@ int main() {
     struct sockaddr_in server_addr, client_addr;
     socklen_t addr_len = sizeof(client_addr);
 
-    // Criar socket UDP
+    // Criar socket
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("Socket Failure");
         exit(EXIT_FAILURE);
@@ -60,7 +61,7 @@ int main() {
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(PORT);
 
-    // Vincular o socket
+    // Vincular socket
     if (bind(sockfd, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("Bind Failure");
         exit(EXIT_FAILURE);
@@ -68,7 +69,7 @@ int main() {
 
     printf("Servidor iniciado na porta %d...\n", PORT);
 
-    // Inicializa a janela de recepção
+    // Inicializa a janela
     initWindows();
 
     // Receber e salvar o arquivo

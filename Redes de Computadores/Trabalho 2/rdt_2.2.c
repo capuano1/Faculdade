@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 #include "rdt.h"
 
@@ -20,6 +21,11 @@ window_t recv_window;
 
 #define TIMEOUT_INTERVAL 2
 
+// Contagem do rtt como timeout
+struct timeval send_time[WINDOW_SIZE];
+struct timeval rtt;
+
+// Inicializa as janelas
 void initWindows() {
     send_window.base = 0;
     send_window.next_seqnum = 0;
@@ -34,6 +40,14 @@ void initWindows() {
     memset(recv_window.packets, 0, sizeof(recv_window.packets));
 }
 
+// Atualiza o RTT
+void calculate_rtt(int seq_num) {
+    struct timeval recv_time, diff;
+    gettimeofday(&recv_time, NULL);
+    timersub(&recv_time, &send_time[seq_num % WINDOW_SIZE], &diff);
+    
+    rtt = diff;
+}
 
 // Checksum
 unsigned short checksum(unsigned short *buf, int nbytes) {
@@ -99,16 +113,18 @@ int has_ackseq(pkt *p, hseq_t seqnum) {
 	return TRUE;
 }
 
+// Start timer do pacote
 void start_timer(int seqnum) {
     clock_gettime(CLOCK_REALTIME, &send_window.timers[seqnum % send_window.window_size]);
 }
 
+// Checar tempo de envio e tempo de timeout
 int is_timeout(int seqnum) {
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
 
     struct timespec start = send_window.timers[seqnum % send_window.window_size];
-    if (now.tv_sec - start.tv_sec > TIMEOUT_INTERVAL) {
+    if (now.tv_sec - start.tv_sec > rtt.tv_sec) {
         return TRUE;
     }
     return FALSE;
@@ -122,6 +138,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     fd_set read_fds;
     struct timeval timeout;
 
+    // Nao-bloqueante
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags < 0) {
         perror("fcntl F_GETFL failed");
@@ -136,8 +153,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
 
     while ((send_window.next_seqnum - send_window.base + WINDOW_SIZE) % WINDOW_SIZE >= WINDOW_SIZE) {
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
+        timeout = rtt;  // Timeout com rtt
         FD_ZERO(&read_fds);
         FD_SET(sockfd, &read_fds);
         int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
@@ -148,7 +164,8 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
                 if (nr > 0 && !iscorrupted(&ack) && has_ackseq(&ack, ack.h.pkt_seq)) {
                     printf("ACK recebido para o pacote %d\n", ack.h.pkt_seq);
                     send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
-                    send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
+                    send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;
+                    calculate_rtt(ack.h.pkt_seq);  // Calcule o RTT aqui
                     if (ack.h.pkt_seq == send_window.base) {
                         send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
                         while (send_window.in_use[send_window.base % send_window.window_size]) {
@@ -167,10 +184,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     // Verifica se o espaço na janela está disponível para adicionar um novo pacote
     if (send_window.in_use[send_window.next_seqnum % send_window.window_size]) {
         printf("Espaço na janela não disponível para o pacote %d, aguardando...\n", send_window.next_seqnum);
-        return rdt_send(sockfd, buf, buf_len, dst);  // Tenta novamente até que o espaço esteja disponível
+        return rdt_send(sockfd, buf, buf_len, dst);
     }
 
-    // Cria o pacote de dados
+    // Cria o pacote
     if (make_pkt(&p, PKT_DATA, send_window.next_seqnum, buf, buf_len) < 0)
         return ERROR;
 
@@ -178,10 +195,11 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     send_window.packets[send_window.next_seqnum % send_window.window_size] = p;
     send_window.ack_received[send_window.next_seqnum % send_window.window_size] = FALSE;
     send_window.in_use[send_window.next_seqnum % send_window.window_size] = TRUE;
+    gettimeofday(&send_time[send_window.next_seqnum % WINDOW_SIZE], NULL); //tempo de envio
     start_timer(send_window.next_seqnum);
-    send_window.next_seqnum = (send_window.next_seqnum + 1) % (2 * WINDOW_SIZE);  // Ajuste no incremento
+    send_window.next_seqnum = (send_window.next_seqnum + 1) % (2 * WINDOW_SIZE);
 
-    // Envia o pacote de dados
+    // send
     ns = sendto(sockfd, &p, p.h.pkt_size, 0, (struct sockaddr *)dst, sizeof(struct sockaddr_in));
     if (ns < 0) {
         perror("sendto(rdt_send) error:");
@@ -189,16 +207,17 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     }
     printf("Pacote %d enviado\n", p.h.pkt_seq);
 
-    // Lógica de repetição seletiva para gerenciar ACKs e retransmissão
+    // ACKs e retransmissao
     while ((send_window.base - send_window.next_seqnum + WINDOW_SIZE) % WINDOW_SIZE != 0) {
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
+        timeout = rtt;  // Use o RTT calculado como timeout
         FD_ZERO(&read_fds);
         FD_SET(sockfd, &read_fds);
         int ret = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
 
         if (ret == 0) {
-            // Timeout, retransmite os pacotes não reconhecidos
+            // Timeout, retransmite os pacotes não reconhecidos e dobra a duração do temporizador
+            rtt.tv_sec *= 2;
+            rtt.tv_usec *= 2;
             for (int i = send_window.base; (i % WINDOW_SIZE) != (send_window.next_seqnum % WINDOW_SIZE); i = (i + 1) % WINDOW_SIZE) {
                 if (!send_window.ack_received[i % send_window.window_size] && is_timeout(i)) {
                     printf("Timeout: retransmitindo pacote %d...\n", i);
@@ -222,6 +241,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
                     printf("ACK recebido para o pacote %d\n", ack.h.pkt_seq);
                     send_window.ack_received[ack.h.pkt_seq % send_window.window_size] = TRUE;
                     send_window.in_use[ack.h.pkt_seq % send_window.window_size] = FALSE;  // Libera o espaço
+                    calculate_rtt(ack.h.pkt_seq);  // Calcule o RTT aqui
                     if (ack.h.pkt_seq == send_window.base) {
                         send_window.base = ((send_window.base + 1) % (2*WINDOW_SIZE));
                         while (send_window.in_use[send_window.base % send_window.window_size]) {
@@ -240,7 +260,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
     return buf_len;
 }
 
-// Verifica número de sequência
+// Verifica se eh o pacote que queremos
 int has_dataseqnum(pkt *p, hseq_t seqnum) {
 	if (p->h.pkt_seq != seqnum || p->h.pkt_type != PKT_DATA)
 		return FALSE;
@@ -261,7 +281,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
         return ERROR;
 
 rerecv:
-    timeout.tv_sec = 10;  // Aumente o temporizador para lidar com arquivos grandes
+    timeout.tv_sec = 10;  // Temporizador do recv grande para dar tempo de escrever o comando de send no outro terminal
     timeout.tv_usec = 0;
 
     FD_ZERO(&read_fds);
@@ -293,7 +313,7 @@ rerecv:
             memcpy(buf, p.msg, p.h.pkt_size - sizeof(hdr));
             recv_window.base = ((recv_window.base + 1) % (2*WINDOW_SIZE));
         } else if (p.h.pkt_seq < recv_window.base + recv_window.window_size && p.h.pkt_seq >= recv_window.base) {
-            // Pacote dentro da janela, mas fora de ordem
+            // Pacote fora de ordem
             recv_window.packets[seq_index] = p;
         }
 
@@ -307,7 +327,9 @@ rerecv:
             return ERROR;
         }
 
-        // Entregar pacotes em ordem
+        // Entrega pacote na ordem correta
+        // Alterar pois servidor agora recebe o tamanho da mensagem e acessa direto o buffer
+        // Janela de transmissao dinamica precisa mudar
         while (recv_window.base != recv_window.next_seqnum) {
             int seq_index = recv_window.base % recv_window.window_size;
             if (recv_window.packets[seq_index].h.pkt_seq == recv_window.base) {
