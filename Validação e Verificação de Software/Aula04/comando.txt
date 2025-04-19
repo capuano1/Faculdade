@@ -1,0 +1,3 @@
+mutatest -s . -t "pytest" -r 314
+
+BAIXAR MUTMUT
