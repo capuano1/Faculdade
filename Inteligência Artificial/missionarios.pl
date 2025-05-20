@@ -13,10 +13,16 @@ movimentos([(1, 0),
 % Preciso checar lado esquerdo e lado direito
 % Notação (M, C, D) mostra os restantes do lado esquerdo
 % Testar primeiro o lado esquerdo, depois o lado direito
+/*
+Não sei o motivo, mas o prolog me dá problema de number outofsync se eu tento usar 0 diretamente
+em algum lugar, como fazer X == 0, X = 0, X is 0...
+Então criei essa variável para que o erro suma.
+*/
 seguro((M, C, _)) :-
-    (M >= C ; M = 0),
-    ((3 - M) >= (3 - C) ; 3 - M = 0).
-
+    MD is 3 - M, CD is 3 - C, Zero is 1 - 1,
+    ((MD == Zero) ; (MD >= CD)),
+    (M >= C ; M == Zero).
+    
 % Inverter Lado
 lado(-1, 1).
 lado(1, -1).
