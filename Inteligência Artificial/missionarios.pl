@@ -5,8 +5,8 @@ direção, para então combinar 1 vez só este valor com a função movimento, s
 duas funções diferentes dependendo do lado que vamos.
 */
 
-exibe([]) :- nl.
-exibe([X|Y]) :- write(X), exibe(Y).
+exibe_lista([]) :- nl.
+exibe_lista([X|Y]) :- write(X), write(' '), exibe_lista(Y).
 
 movimentos([(1, 0),
             (1, 1),
@@ -45,16 +45,21 @@ adjuststate((M1, C1, Dir), (M, C), (M2, C2, NovDir)) :-
     M2 is M1 + AdjustedM, C2 is C1 + AdjustedC,
     lado(Dir, NovDir).
 
+adiciona(A, [], [A]).
+adiciona(A, [B|C], [A, B|C]).
+
 % Busca da solução
-solucao((0, 0, 1), []) :- !.
-solucao(EstadoAtual, [Caminho | EstadoAtual]) :-
+solucao((0, 0, 1), [(0, 0, 1)], _) :- !.
+solucao(EstadoAtual, [EstadoAtual | Caminho], Repetidas) :-
     movimentos(Movs), member((Md, Cd), Movs),
     movimento(EstadoAtual, (Md, Cd)),
     adjuststate(EstadoAtual, (Md, Cd), EstadoProximo),
-    \+ member(EstadoProximo, Caminho),
-    print(EstadoProximo),
-    solucao(EstadoProximo, Caminho).
+    \+ member(EstadoProximo, Repetidas),
+    adiciona(EstadoProximo, Repetidas, NovRepetidas),
+    %exibe_lista(Caminho),
+    %print(EstadoAtual),
+    solucao(EstadoProximo, Caminho, NovRepetidas).
 
 % Retorna a solução final
 resolver(Solucao) :-
-    solucao((3, 3, -1), Solucao).
+    solucao((3, 3, -1), Solucao, []).
