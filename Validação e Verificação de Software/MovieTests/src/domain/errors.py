@@ -9,3 +9,6 @@ class InvalidTitleError(Exception):
 
 class DuplicateMovieNameError(Exception):
     pass
+
+class OverlappingSessionError(Exception):
+    pass

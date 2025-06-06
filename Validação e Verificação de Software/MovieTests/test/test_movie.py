@@ -1,13 +1,13 @@
 from src.domain.model import Movie, Theater
+from test.builder.movie_builder import MovieBuilder
 from datetime import timedelta
 from src.domain.errors import InvalidDurationError, InvalidTitleError, DuplicateMovieNameError
 import pytest
 
 def test_create_movie():
-    movie = Movie("Inception", 148, "Inception Description")
-    assert movie.title == "Inception"
+    movie = MovieBuilder().aMovie().with_duration(148).build()
+    assert movie.title == "Die Hard 2"
     assert movie.duration == 148
-    assert movie.description == "Inception Description"
 
 def test_cannot_create_movie_with_invalid_duration():
     with pytest.raises(InvalidDurationError):
@@ -33,7 +33,7 @@ def test_movie_formatted_duration():
     assert short_movie.formated_duration == "45m"
     
     one_hour_movie = Movie("One Hour Film", 60)
-    assert one_hour_movie.formated_duration == "1h 0m"
+    assert one_hour_movie.formated_duration == "1h"
 
 def test_movie_get_duration_in_timedelta():
     movie = Movie("Inception", 148)

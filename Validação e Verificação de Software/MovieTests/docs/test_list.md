@@ -27,30 +27,25 @@ X Get formatted duration (90 minutes movie -> 1h30min)
 X Get duration as timedelta (converts movie length in minutes to a timedelta object for time calculations)
 
 ## Session Tests
-1. Create session
-2. Session has unique ID
-3. Calculate end time
-4. Check if seat is available
-5. Get all available seats
-6. Detect session overlap same room
-7. No overlap different rooms
-8. No overlap sequential sessions
+X Create session
+X Calculate end time
+X Check if seat is available
+X Check if seats are treated differently between sessions
+X Detect session overlap same room
+X No overlap different rooms
+X No overlap sequential sessions
 
 ## User Tests
-1. Create user
-2. User has unique ID
-3. User bookings start empty
+X User bookings start empty
 
 ## Booking Tests
-1. Create booking
-2. Booking has unique ID
-3. Booking records current time
-4. Calculate total price
-5. Booking added to user bookings
-6. Booking added to session bookings
-7. Confirm booking
-8. Confirm fails if any seat not reserved
-9. Cancel booking
+X Create booking
+X Booking has unique ID
+X Booking records current time
+X Calculate total price
+X Booking added to user bookings
+X Confirm booking
+X Cancel booking
 
 ## Test associations
 1. Create room, add session and book seats

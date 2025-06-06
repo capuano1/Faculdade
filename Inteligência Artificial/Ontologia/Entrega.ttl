@@ -1,0 +1,185 @@
+@prefix : <http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix untitled-ontology-2: <http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#> .
+@base <http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2/> .
+
+<http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2> rdf:type owl:Ontology .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#hasPreference
+untitled-ontology-2:hasPreference rdf:type owl:ObjectProperty ,
+                                           owl:TransitiveProperty .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#lightPreference
+untitled-ontology-2:lightPreference rdf:type owl:ObjectProperty ;
+                                    rdfs:subPropertyOf untitled-ontology-2:hasPreference ;
+                                    rdf:type owl:FunctionalProperty ,
+                                             owl:TransitiveProperty ;
+                                    rdfs:domain untitled-ontology-2:Pessoa ;
+                                    rdfs:range untitled-ontology-2:Luminosidade .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#setLight
+untitled-ontology-2:setLight rdf:type owl:ObjectProperty ;
+                             rdfs:subPropertyOf untitled-ontology-2:setPreference ;
+                             rdf:type owl:FunctionalProperty ,
+                                      owl:TransitiveProperty ;
+                             rdfs:domain untitled-ontology-2:Luminosidade ;
+                             rdfs:range untitled-ontology-2:Luz .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#setPreference
+untitled-ontology-2:setPreference rdf:type owl:ObjectProperty ,
+                                           owl:TransitiveProperty .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#setTemperature
+untitled-ontology-2:setTemperature rdf:type owl:ObjectProperty ;
+                                   rdfs:subPropertyOf untitled-ontology-2:setPreference ;
+                                   rdf:type owl:FunctionalProperty ,
+                                            owl:TransitiveProperty ;
+                                   rdfs:domain untitled-ontology-2:Temperatura ;
+                                   rdfs:range untitled-ontology-2:Ar .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#temperaturePreference
+untitled-ontology-2:temperaturePreference rdf:type owl:ObjectProperty ;
+                                          rdfs:subPropertyOf untitled-ontology-2:hasPreference ;
+                                          rdf:type owl:FunctionalProperty ,
+                                                   owl:TransitiveProperty ;
+                                          rdfs:domain untitled-ontology-2:Pessoa ;
+                                          rdfs:range untitled-ontology-2:Temperatura .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#lightPreference
+untitled-ontology-2:lightPreference rdf:type owl:DatatypeProperty ;
+                                    rdfs:domain untitled-ontology-2:Pessoa ;
+                                    rdfs:range xsd:string .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#temperaturePreference
+untitled-ontology-2:temperaturePreference rdf:type owl:DatatypeProperty ;
+                                          rdfs:domain untitled-ontology-2:Pessoa ;
+                                          rdfs:range xsd:string .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Adulto
+untitled-ontology-2:Adulto rdf:type owl:Class ;
+                           rdfs:subClassOf untitled-ontology-2:Pessoa .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Ar
+untitled-ontology-2:Ar rdf:type owl:Class ;
+                       rdfs:subClassOf untitled-ontology-2:Sistema .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Automacao
+untitled-ontology-2:Automacao rdf:type owl:Class ;
+                              rdfs:subClassOf untitled-ontology-2:Sistema .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Cozinha
+untitled-ontology-2:Cozinha rdf:type owl:Class ;
+                            rdfs:subClassOf untitled-ontology-2:Recinto .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Crianca
+untitled-ontology-2:Crianca rdf:type owl:Class ;
+                            rdfs:subClassOf untitled-ontology-2:Pessoa .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Idoso
+untitled-ontology-2:Idoso rdf:type owl:Class ;
+                          rdfs:subClassOf untitled-ontology-2:Pessoa .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Luminosidade
+untitled-ontology-2:Luminosidade rdf:type owl:Class ;
+                                 rdfs:subClassOf untitled-ontology-2:Preferencia .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Luz
+untitled-ontology-2:Luz rdf:type owl:Class ;
+                        rdfs:subClassOf untitled-ontology-2:Sistema .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Pessoa
+untitled-ontology-2:Pessoa rdf:type owl:Class .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Preferencia
+untitled-ontology-2:Preferencia rdf:type owl:Class .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Recinto
+untitled-ontology-2:Recinto rdf:type owl:Class .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#SalaEstar
+untitled-ontology-2:SalaEstar rdf:type owl:Class ;
+                              rdfs:subClassOf untitled-ontology-2:Recinto .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#SalaReflexao
+untitled-ontology-2:SalaReflexao rdf:type owl:Class ;
+                                 rdfs:subClassOf untitled-ontology-2:Recinto .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Sistema
+untitled-ontology-2:Sistema rdf:type owl:Class .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Temperatura
+untitled-ontology-2:Temperatura rdf:type owl:Class ;
+                                rdfs:subClassOf untitled-ontology-2:Preferencia .
+
+
+#################################################################
+#    Individuals
+#################################################################
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Antonio
+untitled-ontology-2:Antonio rdf:type owl:NamedIndividual ,
+                                     untitled-ontology-2:Idoso ;
+                            untitled-ontology-2:lightPreference "baixo" ;
+                            untitled-ontology-2:temperaturePreference "alto" .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Joao
+untitled-ontology-2:Joao rdf:type owl:NamedIndividual ,
+                                  untitled-ontology-2:Crianca ;
+                         untitled-ontology-2:lightPreference "alto" ;
+                         untitled-ontology-2:temperaturePreference "medio" .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Joaquinha
+untitled-ontology-2:Joaquinha rdf:type owl:NamedIndividual ,
+                                       untitled-ontology-2:Adulto ;
+                              untitled-ontology-2:lightPreference "medio" ;
+                              untitled-ontology-2:temperaturePreference "baixo" .
+
+
+###  http://www.semanticweb.org/capuano/ontologies/2025/4/untitled-ontology-2#Maria
+untitled-ontology-2:Maria rdf:type owl:NamedIndividual ,
+                                   untitled-ontology-2:Adulto ;
+                          untitled-ontology-2:lightPreference "medio" ;
+                          untitled-ontology-2:temperaturePreference "baixo" .
+
+
+###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi
