@@ -30,12 +30,10 @@ def soma_cia(intervalx: tuple, intervaly: tuple) -> tuple:
     wx: float = intervalx[1] - intervalx[0]
     wy: float = intervaly[1] - intervaly[0]
 
-    # Calculate the constrained sum
     lowest_sum: float = lowest_x + lowest_y
     min_sum: float = min(lowest_sum, lowest_sum + wx, lowest_sum + wy, lowest_sum + wx + wy)
     max_sum: float = max(lowest_sum, lowest_sum + wx, lowest_sum + wy, lowest_sum + wx + wy)
 
-    # Return the resulting interval
     resultado: tuple = (min_sum, max_sum)
     return resultado
 
@@ -45,12 +43,10 @@ def subtrai_cia(intervalx: tuple, intervaly: tuple) -> tuple:
     wx: float = intervalx[1] - intervalx[0]
     wy: float = intervaly[1] - intervaly[0]
 
-    # Calculate the constrained subtraction
     lowest_diff: float = lowest_x - lowest_y
     min_diff: float = min(lowest_diff, lowest_diff + wx, lowest_diff - wy, lowest_diff + wx - wy)
     max_diff: float = max(lowest_diff, lowest_diff + wx, lowest_diff - wy, lowest_diff + wx - wy)
 
-    # Return the resulting interval
     resultado: tuple = (min_diff, max_diff)
     return resultado
 
