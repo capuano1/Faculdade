@@ -52,5 +52,38 @@ int mergeSort(int arr[], int temp[], int left, int right) {
 }
 
 int main() {
+    int caso = 1, marbles, queries;
 
+    scanf("%i %i", &marbles, &queries);
+
+    while(marbles != 0 && queries != 0) {
+        int marbleArray[marbles], querieArray[queries], temp[marbles];
+        
+        for (int i = 0; i < marbles; i++) {
+            scanf("%i", &marbleArray[i]);
+        }
+        for (int i = 0; i < queries; i++) {
+            scanf("%i", &querieArray[i]);
+        }
+
+        printf("CASE# %i:\n", caso);
+
+        // Usa o mergeSort feito em outro exercício para organizar as bolinhas de gude
+        mergeSort(marbleArray, temp, 0, marbles-1);
+
+        for (int i = 0; i < queries; i++) {
+            int found = 0;
+            for (int j = 0; j < marbles; j++) {
+                if (querieArray[i] == marbleArray[j]) {
+                    found = j + 1;
+                    break;
+                }
+            }
+            if (found) printf("%i found at %i\n", querieArray[i], found);
+            else printf("%i not found\n", querieArray[i]);
+        }
+
+        caso++;
+        scanf("%i %i", &marbles, &queries);
+    }
 }
