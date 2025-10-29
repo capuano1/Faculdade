@@ -1,0 +1,8 @@
+# Leia 3 números e imprima a soma dos dois menores.
+.data
+prompt: .asciiz "Digite um numero: "
+
+.text
+.globl main
+main:
+# Leia o primeiro numero
