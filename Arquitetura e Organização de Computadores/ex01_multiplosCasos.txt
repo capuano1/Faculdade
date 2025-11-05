@@ -1,0 +1,55 @@
+# Explicacao: sempre mantenho o maior valor em $t0
+.data
+maior: .asciiz "Maior: "
+.text
+.globl main
+main:
+    # primeiro valor indica o numero de casos
+    li $v0, 5
+    syscall
+    move $t2, $v0
+    
+program:
+    # ler primeiro valor
+    li $v0, 5
+    syscall
+    move $t0, $v0
+    
+    #ler segundo valor
+    li $v0, 5
+    syscall
+    move $t1, $v0
+    
+    # se $t1 for maior, vou jogar ele em $t0
+    bge $t1, $t0, changeBit
+    
+    j third
+
+changeBit:
+    move $t0, $t1
+    j third
+
+third:
+    li $v0, 5
+    syscall
+    move $t1, $v0
+    
+    # novamente, se $t1 for maior, vou jogar em $t0
+    bge $t1, $t0, lastChange
+    
+    j print
+    
+lastChange:
+    move $t0, $t1
+    
+print:
+    li $v0, 4
+    la $a0, maior
+    syscall
+    
+    li $v0, 1
+    move $a0, $t0
+    syscall
+    
+    sub $t2, $t2, 1
+    bgt $t2, 0, program

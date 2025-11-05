@@ -1,0 +1,35 @@
+# Leia um número inteiro e, se for maior que zero, imprima o dobro.
+.data
+prompt: .asciiz "Digite um numero: "
+num: .word 0
+
+.text
+.globl main
+main:
+# Printar a mensagem inicial
+li $v0, 4
+la $a0, prompt
+syscall
+
+# Ler um int
+li $v0, 5
+syscall
+
+# If inteiro lido > 0
+bgt $v0, 0, maior
+# Basicamente um else, ele salva o numero em num e pula para o print
+sw $v0, num
+j print
+
+# Se for maior, dobre o valor e salve em num
+maior:
+add $t0, $v0, $v0
+sw $t0, num
+
+# Imprima o valor
+print:
+li $v0, 1
+lw $a0, num
+syscall
+li $v0, 10 # Exit system call
+syscall
