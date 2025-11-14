@@ -8,6 +8,18 @@ typedef struct {
     elemento* prox;
 } elemento;
 
+int arvminima (elemento lista[], int blocks, float folego) {
+    int visitados[blocks];
+    memset(visitados, 0, sizeof(visitados));
+    visitados[0] = 1;
+    int total_visitados = 1;
+    float total_peso = 0.0;
+
+    while (total_visitados < blocks) {
+        
+    }
+}
+
 int main () {
     int blocks, paths;
     float folego;
