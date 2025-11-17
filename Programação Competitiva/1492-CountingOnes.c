@@ -24,16 +24,13 @@ long long int sum (long long int n) {
 int main () {
     long long int x, y;
     int sumb = 0;
-    
-    scanf("%lld", &x);
-    scanf("%lld", &y);
 
-    //printf("%lld\n", sum(y));
-    //printf("%lld\n", sum(x));
-    //sum(y);
-    //sum(x);
+    while (scanf("%lld %lld", &x, &y) != EOF) {
+        //printf("%lld\n", sum(y));
+        //printf("%lld\n", sum(x));
+        //sum(y);
+        //sum(x);
 
-    printf("%lld", sum(y) - (sum(x - 1)));
+        printf("%lld\n", sum(y) - (sum(x - 1)));
+    }
 }
-
-
