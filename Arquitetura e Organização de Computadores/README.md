@@ -24,7 +24,7 @@ Com este comando, podemos remover um trem da nossa lista. Para tal, precisamos a
 Comando simples que lista todos os trens cadastrados
 
 ## 4 - Buscar trem
-Com este comando, podemos buscar um trem específico na lista através de seu código. Para tal, precisamos apenas escrever qual é o código do trem em questão. Não se deve apertar enter. Caso o trem seja encontrado, seus dados serão printados na tela
+Com este comando, podemos buscar um trem específico ou todos os trens que vão para uma determinada cidade através de seus códigos. Para tal, primeiro devemos selecionar se queremos buscar um trem específico (1) ou uma cidade (2). Após isso, é apenas necessário digitar o código do trem ou da cidade, de acordo com a escolha feita anteriormente.
 
 ## 5 - Marcar chegada do trem
 Com este comando, é possível demarcar o estado do trem como "chegou". Para tal, precisamos apenas escrever qual é o código do trem em questão. Não se deve apertar enter.
