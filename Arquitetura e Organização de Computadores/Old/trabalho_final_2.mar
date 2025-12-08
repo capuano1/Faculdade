@@ -649,7 +649,7 @@ chegada_trem:
 jal buscar_trem
 la $a0, chegou
 sw $a0, 0($s5)
-j menu
+jr $ra
 
 # Imprime a lista de comandos possíveis
 imprime_comandos:
