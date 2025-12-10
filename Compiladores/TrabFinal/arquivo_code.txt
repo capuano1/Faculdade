@@ -1,0 +1,7 @@
+
+func main:
+x = 10
+y = 20
+param x
+t1 = call output, 1
+end func main

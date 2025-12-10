@@ -1,7 +1,10 @@
 import sys
 import ply.lex as lex
 import ply.yacc as yacc
-from graphviz import Digraph  # Importação necessária
+from graphviz import Digraph
+
+# Variável global para controle de erros semânticos
+SEMANTIC_ERROR = False
 
 # ==========================================
 # 1. ESTRUTURA DA AST
@@ -13,21 +16,20 @@ class Node:
         self.children = children if children else []
         self.leaf = leaf
         self.lineno = lineno
-        self.val_type = None 
+        self.val_type = None
 
     def __repr__(self):
         return f"<{self.type}>"
 
 # ==========================================
-# 2. VISUALIZADOR GRAPHVIZ (NOVO)
+# 2. VISUALIZADOR
 # ==========================================
 
 class ASTVisualizer:
     def __init__(self, ast):
         self.ast = ast
         self.dot = Digraph(comment='Abstract Syntax Tree', format='png')
-        self.dot.attr(rankdir='TB')  # Top to Bottom
-        self.count = 0
+        self.dot.attr(rankdir='TB') 
 
     def build(self):
         if self.ast:
@@ -35,18 +37,14 @@ class ASTVisualizer:
         return self.dot
 
     def _visit(self, node):
-        # Usa o ID único do objeto em memória para identificar o nó no grafo
         node_id = str(id(node))
-        
-        # Cria o rótulo do nó (Tipo + Valor se for folha)
         label = node.type
         if node.leaf is not None:
             label += f"\n({node.leaf})"
         
-        # Define a forma e cor baseada no tipo de nó
         shape = 'ellipse'
         color = 'black'
-        if node.type in ['CONST', 'ID', 'NUM']:
+        if node.type in ['CONST', 'ID', 'NUM', 'CALL']:
             shape = 'box'
             color = 'blue'
         elif node.type in ['OP', 'ASSIGN']:
@@ -55,15 +53,14 @@ class ASTVisualizer:
             
         self.dot.node(node_id, label, shape=shape, color=color)
 
-        # Percorre filhos e cria arestas
         for child in node.children:
-            if child: # Proteção contra None
+            if child:
                 child_id = str(id(child))
                 self.dot.edge(node_id, child_id)
                 self._visit(child)
 
 # ==========================================
-# 3. SCANNER (LÉXICO)
+# 3. SCANNER
 # ==========================================
 
 reserved = {
@@ -119,12 +116,12 @@ def t_COMMENT(t):
 
 def t_error(t):
     print(f"ERRO LEXICO: '{t.value[0]}' LINHA: {t.lexer.lineno}")
-    t.lexer.skip(1)
+    sys.exit(1)
 
 lexer = lex.lex()
 
 # ==========================================
-# 4. PARSER (SINTÁTICO)
+# 4. PARSER (Com Detecção de Esperados)
 # ==========================================
 
 precedence = (
@@ -166,8 +163,8 @@ def p_type_specifier(p):
 def p_params(p):
     '''params : param_list
               | VOID'''
-    if p[1] == 'void': p[0] = Node('PARAMS_LIST', children=[]) 
-    else: p[0] = Node('PARAMS_LIST', children=p[1]) # Agrupando para visualizar melhor
+    if p[1] == 'void': p[0] = Node('PARAMS', children=[]) 
+    else: p[0] = Node('PARAMS', children=p[1])
 
 def p_param_list(p):
     '''param_list : param_list COMMA param
@@ -183,11 +180,10 @@ def p_param(p):
 
 def p_compound_stmt(p):
     'compound_stmt : LBRACE local_declarations statement_list RBRACE'
-    # Agrupando filhos em nós intermediários para o gráfico ficar limpo
-    decls = Node('LOCAL_DECLS', children=p[2]) if p[2] else None
+    decls = Node('LOCALS', children=p[2]) if p[2] else None
     stmts = Node('STMTS', children=p[3]) if p[3] else None
-    children = [c for c in [decls, stmts] if c]
-    p[0] = Node('BLOCK', children=children, lineno=p.lineno(1))
+    valid_children = [c for c in [decls, stmts] if c]
+    p[0] = Node('BLOCK', children=valid_children, lineno=p.lineno(1))
 
 def p_local_declarations(p):
     '''local_declarations : local_declarations declaration
@@ -247,11 +243,11 @@ def p_simple_expression(p):
     else: p[0] = p[1]
 
 def p_relop(p):
-    '''relop : LE 
-             | LT 
-             | GT 
-             | GE 
-             | EQ 
+    '''relop : LE
+             | LT
+             | GT
+             | GE
+             | EQ
              | NE'''
     p[0] = p[1]
 
@@ -316,21 +312,107 @@ def p_empty(p):
     'empty :'
     pass
 
+# [cite_start]Função de Erro Sintático Atualizada [cite: 33]
 def p_error(p):
-    if p: print(f"ERRO SINTATICO: token '{p.value}', LINHA: {p.lineno}")
-    else: print("ERRO SINTATICO: EOF")
+    if p:
+        print(f"ERRO SINTATICO: token inesperado '{p.value}'", end="")
+        
+        # Lógica para descobrir tokens esperados
+        # Acessamos o parser através do lexer (que foi vinculado no main)
+        if hasattr(p.lexer, 'parser'):
+            parser = p.lexer.parser
+            # O estado atual está no topo da pilha de estados
+            state = parser.statestack[-1]
+            
+            # parser.action[state] contém as ações válidas (tokens esperados)
+            # As chaves são os tokens. Filtramos '$end' e 'error'
+            actions = parser.action[state]
+            expected = [str(k) for k in actions.keys() if k not in ['$end', 'error']]
+            
+            if expected:
+                # Formata a lista (ex: "LPAREN ou SEMI")
+                expected_str = " ou ".join(expected)
+                print(f", esperado '{expected_str}'", end="")
+        
+        print(f" LINHA: {p.lineno}")
+    else:
+        print("ERRO SINTATICO: Fim de arquivo inesperado")
 
 parser = yacc.yacc()
 
 # ==========================================
-# 5. GERADOR DE CÓDIGO (3 ENDEREÇOS)
+# 5. TABELA DE SÍMBOLOS & SEMÂNTICA
+# ==========================================
+
+class SymbolTable:
+    def __init__(self):
+        self.scopes = [{}] 
+    
+    def enter_scope(self):
+        self.scopes.append({})
+        
+    def exit_scope(self):
+        self.scopes.pop()
+        
+    def insert(self, name, type_, category):
+        if name in self.scopes[-1]:
+            return False
+        self.scopes[-1][name] = {'type': type_, 'cat': category}
+        return True
+        
+    def lookup(self, name):
+        for scope in reversed(self.scopes):
+            if name in scope:
+                return scope[name]
+        return None
+
+def semantic_error(msg):
+    global SEMANTIC_ERROR
+    SEMANTIC_ERROR = True
+    print(msg)
+
+def semantic_analyze(node, symtab):
+    if not node: return
+    
+    if node.type == 'FUN_DECL':
+        if not symtab.insert(node.leaf, node.val_type, 'func'):
+             semantic_error(f"ERRO SEMANTICO: Função '{node.leaf}' já declarada. LINHA: {node.lineno}")
+        symtab.enter_scope()
+        params_node = node.children[0]
+        for param in params_node.children:
+            symtab.insert(param.leaf, param.val_type, 'param')
+        semantic_analyze(node.children[1], symtab)
+        symtab.exit_scope()
+        return
+
+    elif node.type in ['VAR_DECL', 'VEC_DECL']:
+        if not symtab.insert(node.leaf, node.val_type, 'var'):
+            semantic_error(f"ERRO SEMANTICO: Variável '{node.leaf}' já declarada neste escopo. LINHA: {node.lineno}")
+
+    elif node.type == 'ID' or node.type == 'VECTOR_ID':
+        if not symtab.lookup(node.leaf):
+            semantic_error(f"ERRO SEMANTICO: Variável '{node.leaf}' não declarada. LINHA: {node.lineno}")
+
+    elif node.type == 'CALL':
+        info = symtab.lookup(node.leaf)
+        if not info:
+            semantic_error(f"ERRO SEMANTICO: Função '{node.leaf}' não declarada. LINHA: {node.lineno}")
+        elif info['cat'] != 'func':
+            semantic_error(f"ERRO SEMANTICO: '{node.leaf}' não é uma função. LINHA: {node.lineno}")
+
+    for child in node.children:
+        semantic_analyze(child, symtab)
+
+# ==========================================
+# 6. GERADOR DE CÓDIGO
 # ==========================================
 
 class CodeGen:
     def __init__(self):
         self.temp_count = 0
         self.label_count = 0
-    
+        self.code_buffer = []
+
     def new_temp(self):
         self.temp_count += 1
         return f"t{self.temp_count}"
@@ -338,6 +420,12 @@ class CodeGen:
     def new_label(self):
         self.label_count += 1
         return f"L{self.label_count}"
+
+    def emit(self, line):
+        self.code_buffer.append(line)
+
+    def get_code(self):
+        return "\n".join(self.code_buffer)
 
     def gen(self, node):
         if not node: return ""
@@ -350,65 +438,122 @@ class CodeGen:
             t1 = self.gen(node.children[0])
             t2 = self.gen(node.children[1])
             temp = self.new_temp()
-            print(f"{temp} = {t1} {node.leaf} {t2}")
+            self.emit(f"{temp} = {t1} {node.leaf} {t2}") 
             return temp
         elif node.type == 'ASSIGN':
             res = self.gen(node.children[1])
             var_name = node.children[0].leaf
-            print(f"{var_name} = {res}")
+            self.emit(f"{var_name} = {res}")
             return var_name
         elif node.type == 'IF':
             l_else = self.new_label()
             l_end = self.new_label()
             cond = self.gen(node.children[0])
-            print(f"if_false {cond} goto {l_else}")
+            self.emit(f"if_false {cond} goto {l_else}")
             self.gen(node.children[1])
-            print(f"goto {l_end}")
-            print(f"label {l_else}")
+            self.emit(f"goto {l_end}")
+            self.emit(f"label {l_else}")
             if len(node.children) > 2: self.gen(node.children[2])
-            print(f"label {l_end}")
-        elif node.type in ['BLOCK', 'PROGRAM', 'LOCAL_DECLS', 'STMTS']:
-            for child in node.children: self.gen(child)
+            self.emit(f"label {l_end}")
+        elif node.type == 'WHILE':
+            l_start = self.new_label()
+            l_end = self.new_label()
+            self.emit(f"label {l_start}")
+            cond = self.gen(node.children[0])
+            self.emit(f"if_false {cond} goto {l_end}")
+            self.gen(node.children[1])
+            self.emit(f"goto {l_start}")
+            self.emit(f"label {l_end}")
         elif node.type == 'FUN_DECL':
-            print(f"\nfunc {node.leaf}:")
-            # children[0] são params, children[1] é o corpo
+            self.emit(f"\nfunc {node.leaf}:")
             if len(node.children) > 1: self.gen(node.children[1])
-            print(f"end func {node.leaf}")
+            self.emit(f"end func {node.leaf}")
+        elif node.type == 'RETURN':
+            if node.children:
+                res = self.gen(node.children[0])
+                self.emit(f"return {res}")
+            else:
+                self.emit("return")
+        elif node.type == 'CALL':
+            args = []
+            if node.children and node.children[0].type == 'ARGS':
+                 for arg in node.children[0].children:
+                     args.append(self.gen(arg))
+            for a in args:
+                self.emit(f"param {a}")
+            t = self.new_temp()
+            self.emit(f"{t} = call {node.leaf}, {len(args)}")
+            return t
+        
+        elif node.children:
+            for child in node.children:
+                self.gen(child)
         return ""
 
 # ==========================================
-# EXECUÇÃO PRINCIPAL
+# 7. EXECUÇÃO PRINCIPAL
 # ==========================================
 
 if __name__ == "__main__":
-    codigo_fonte = """
-    int gcd(int u, int v) {
-        if (v == 0) return u;
-        else return gcd(v, u - u/v*v);
-    }
-    
-    int main(void) {
-        int x; 
-        x = 10;
-        x = x + 5 * 2;
-    }
-    """
+    if len(sys.argv) < 2:
+        print("Uso: python compiler.py <arquivo.c>")
+        sys.exit(1)
 
-    print("--- 1. PARSER ---")
-    ast = parser.parse(codigo_fonte, lexer=lexer)
+    filename = sys.argv[1]
+
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            source_code = f.read()
+    except FileNotFoundError:
+        print(f"Erro: Arquivo '{filename}' não encontrado.")
+        sys.exit(1)
+
+    print(f"--- INICIANDO COMPILAÇÃO DE: {filename} ---")
+
+    # [IMPORTANTE] VINCULA O PARSER AO LEXER PARA p_error FUNCIONAR
+    lexer.parser = parser
+
+    # 1. Parsing
+    ast = parser.parse(source_code, lexer=lexer)
     
-    print("\n--- 2. GERANDO VISUALIZAÇÃO ---")
+    if not ast:
+        print("Erro Fatal: AST não foi gerada devido a erros de sintaxe.")
+        sys.exit(1)
+
+    print("\n[OK] Análise Sintática Concluída.")
+
+    # 2. Semântica
+    print("\n[DEBUG] Iniciando Análise Semântica...")
+    symtab = SymbolTable()
+    symtab.insert('input', 'int', 'func')
+    symtab.insert('output', 'void', 'func')
+    semantic_analyze(ast, symtab)
+    
+    if SEMANTIC_ERROR:
+        print("\n[FALHA] Compilação abortada devido a erros semânticos.")
+        sys.exit(1)
+        
+    print("[OK] Verificação semântica finalizada com sucesso.")
+
+    # 3. Artefatos de Saída
+    print("\n[DEBUG] Gerando visualização da AST...")
     viz = ASTVisualizer(ast)
     dot = viz.build()
-    
-    # Salva e Renderiza o arquivo
-    # 'ast_graph' será o nome do arquivo (ast_graph.pdf ou ast_graph.png)
+    output_ast = filename.split('.')[0] + "_ast"
     try:
-        output_path = dot.render('ast_graph', view=True) 
-        print(f"Gráfico gerado com sucesso em: {output_path}")
+        file_path = dot.render(output_ast, view=True, cleanup=True)
+        print(f"[OK] Gráfico da AST salvo em: {file_path}")
     except Exception as e:
-        print(f"Erro ao gerar gráfico (verifique se o Graphviz está instalado no sistema): {e}")
+        print(f"[AVISO] Graphviz não encontrado ou erro ao gerar imagem: {e}")
 
-    print("\n--- 3. CÓDIGO INTERMEDIÁRIO ---")
+    print("\n[DEBUG] Gerando Código Intermediário...")
     cg = CodeGen()
     cg.gen(ast)
+    
+    output_code_file = filename.split('.')[0] + "_code.txt"
+    try:
+        with open(output_code_file, 'w') as f:
+            f.write(cg.get_code())
+        print(f"[OK] Código de 3 endereços salvo em: {output_code_file}")
+    except IOError as e:
+        print(f"Erro ao salvar arquivo de código: {e}")
