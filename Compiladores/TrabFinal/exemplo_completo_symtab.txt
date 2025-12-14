@@ -1,0 +1,15 @@
+=== TABELA DE SÍMBOLOS ===
+NOME            | TIPO       | CATEGORIA  | ESCOPO    
+-------------------------------------------------------
+input           | int        | func       | Global    
+output          | void       | func       | Global    
+x               | int        | var        | Global    
+y               | int        | var        | Global    
+soma            | int        | func       | Global    
+a               | int        | param      | Local 1   
+b               | int        | param      | Local 1   
+resultado       | int        | var        | Local 1   
+main            | void       | func       | Global    
+i               | int        | var        | Local 1   
+total           | int        | var        | Local 1   
+

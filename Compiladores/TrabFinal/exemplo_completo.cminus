@@ -1,0 +1,33 @@
+/* Programa de exemplo em C− */
+
+int x;
+int y[10];
+
+int soma(int a, int b)
+{
+    int resultado;
+    resultado = a + b;
+    return resultado;
+}
+
+void main(void)
+{
+    int i;
+    int total;
+
+    i = 0;
+    total = 0;
+
+    while (i < 10)
+    {
+        total = soma(total, i);
+        i = i + 1;
+    }
+
+    if (total > 20)
+        total = total - 1;
+    else
+        total = total + 1;
+
+    return;
+}
