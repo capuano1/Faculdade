@@ -1,0 +1,727 @@
+.data
+novLinha: .asciiz "\n"
+tabLinha: .asciiz " \t "
+doisPontos: .asciiz ":"
+titulo: .asciiz "TREM  DESTINO  PREVISAO  STATUS\n"
+caminho: .asciiz "A CAMINHO"
+chegou: .asciiz "CHEGOU"
+atrasado: .asciiz "ATRASADO"
+horario: .asciiz "Digite o horario atual, sem separar horas e minutos com dois pontos:\n"
+escolha: .asciiz "Digite 1 para buscar por um trem ou 2 para buscar pelo destino:\n"
+destino: .asciiz "Digite o codigo de 3 digitos da cidade de destino:\n"
+ajuda: .asciiz "1 - Adicionar trem\n2 - Remover trem\n3 - Listar trens\n4 - Buscar trem\n5 - Marcar chegada do trem\n9 - Encerrar programa\n"
+comando: .asciiz "Digite um comando ou 0 para ver a lista de comandos\n"
+codigo_trem: .asciiz "Digite o codigo do trem:\n"
+codigo_cidade: .asciiz "Digite o codigo de 3 digitos da cidade a ser procurada:\n"
+horario_trem: .asciiz "Digite o horário de chegada do trem, sem separar horas e minutos com dois pontos:\n"
+erro_comando: .asciiz "Comando invalido!\n"
+erro_codigo_trem: .asciiz "Codigo de trem invalido!\n"
+erro_horario_trem: .asciiz "Horario invalido!\n"
+erro_destino: .asciiz "Codigo de destino invalido!\n"
+erro_busca_trem: .asciiz "Trem nao encontrado!\n"
+erro_vetor_cheio: .asciiz "Lista de trens cheia!\n"
+
+# Vetor de ponteiros para as strings de nomes dos trens
+vetor_trens: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+# Vetor de inteiros para os horários (sem os : para separar horas e minutos)
+vetor_horarios: .word 9999, 9999, 9999, 9999, 9999, 9999, 9999, 9999, 9999, 9999
+
+# Vetor de ponteiros para as strings de "A CAMINHO", "CHEGOU" e "ATRASADO"
+vetor_status: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+# Vetor de ponteiros para as cidades de destino
+vetor_destino: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+.text
+.globl main
+
+# Encerra o programa
+encerrar:
+li $v0, 10
+syscall
+
+# Imprime a mensagem de erro de que há algo de errado com o código de trem inserido
+erro_trem:
+la $a0, erro_codigo_trem
+li $v0, 4
+syscall
+j menu
+
+# Imprime a mensagem de erro de que o horário inserido de chegada do trem está incorreto
+erro_horario:
+la $a0, erro_horario_trem
+li $v0, 4
+syscall
+j menu
+
+# A diferença desta função é que ela realiza um j para o main, ao invés de menu
+# É a função de erro de horário para o caso do horário atual
+erro_horario_atual:
+la $a0, erro_horario_trem
+li $v0, 4
+syscall
+j main
+
+# Erro no codigo de destino
+erro_cod_destino:
+la $a0, erro_destino
+li $v0, 4
+syscall
+j menu
+
+erro_lista_cheia:
+la $a0, erro_vetor_cheio
+li $v0, 4
+syscall
+j menu
+
+# Adiciona um trem ao vetor
+adicionar_trem:
+beq $t9, 10, erro_lista_cheia
+# Primeiro vamos fazer o equivalente a um malloc
+li $v0, 9
+# Os códigos vão ter 1 letra e 3 números, portanto, buffer de tamanho 5 (n - 1)
+li $a0, 5
+syscall
+
+# Salvar o endereço em outro registrador para evitar de perder
+move $s1, $v0
+
+# Printar a mensagem
+li $v0, 4
+la $a0, codigo_trem
+syscall
+
+# Input
+li $v0, 8
+move $a0, $s1
+# Tamanho máximo da string
+li $a1, 5
+syscall
+
+la $a0, novLinha
+li $v0, 4
+syscall
+
+# Vou separar essa parte em uma função diferente para poder fazer um looping
+# Mas basicamente, vai continuar a execução da função de adicionar trem
+# Vamos verificar se segue o padrão de 1 letra maiúscula no começo
+verifica_codigo_letra:
+# $t1 será o ponteiro para o caractere que eu quero olhar
+# Precisa usar o lb para carregar apenas 1 byte, que contém 1 caracter
+lb $t1, 0($s1)
+bgt $t1, 'Z', erro_trem
+blt $t1, 'A', erro_trem
+# $t0 será o contador da próxima parte
+li $t0, 0
+
+# Agora vamos verificar se o codigo segue o padrão, com 3 números após a 1 letra maiúscula
+verifica_codigo_numeros:
+# Para seguirmos para o próximo byte, vulgo, próximo caracter
+addi $s1, $s1, 1
+lb $t1, 0($s1)
+bgt $t1, '9', erro_trem
+blt $t1, '0', erro_trem
+addi $t0, $t0, 1
+blt $t0, 3, verifica_codigo_numeros
+
+# Resetar $s1 para apontar para o começo da string
+subi $s1, $s1, 3
+
+# Agora, vamos ler o código de 3 digitos da cidade de destino
+adiciona_destino:
+# Vamos fazer novamente o malloc
+li $v0, 9
+li $a0, 4
+syscall
+
+move $s2, $v0
+
+li $v0, 4
+la $a0, destino
+syscall
+li $v0, 8
+move $a0, $s2
+li $a1, 4
+syscall
+
+# Nova linha pois esse input encerra logo que você digita o ultimo caracter
+# Ou seja, para legibilidade do I/O
+la $a0, novLinha
+li $v0, 4
+syscall
+
+# Salvando 0 em $t0 para servir de contador no próximo loop
+li $t0, 0
+
+# Vamos verificar que o código de destino possui 3 caracteres
+verifica_destino:
+lb $t1, 0($s2)
+beq $t1, '\n', erro_cod_destino
+addi $t0, $t0, 1
+addi $s2, $s2, 1
+blt $t0, 3, verifica_destino
+
+# Resetar o ponteiro para o começo da string
+subi $s2, $s2, 3
+
+# Agora, vamos ler o horário
+adiciona_trem_horario:
+li $v0, 4
+la $a0, horario_trem
+syscall
+li $v0, 5
+syscall
+# Vou salvar o horário do trem em $t2
+move $t2, $v0
+
+# Vamos verificar se o horário é válido
+# Vou separar horas em $t4 e minutos em $t5
+li $t3, 100
+div $t2, $t3
+mflo $t4
+mfhi $t5
+
+bgt $t4, 23, erro_horario
+blt $t4, 0, erro_horario
+bgt $t5, 59, erro_horario
+blt $t5, 0, erro_horario
+
+set_vetores:
+# Agora sim, vamos salvar o horário e o trem
+# O primeiro passo é criar ponteiros que apontem para o começo do vetor de horário, status e de trens
+la $s3, vetor_trens
+la $s4, vetor_horarios
+la $s5, vetor_status
+la $s6, vetor_destino
+
+# A próxima parte está em uma função separada pois será necessário fazer um loop
+# No caso, precisamos de um loop para encontrar a primeira posição livre
+# Vamos simplesmente procurar uma posição no vetor de horários com -1, o que significa que está livre
+salvar_trem_procurar:
+lw $t0, 0($s4)
+beq $t0, 9999, salvar_trem
+addi $s3, $s3, 4
+addi $s4, $s4, 4
+addi $s5, $s5, 4
+addi $s6, $s6, 4
+j salvar_trem_procurar
+
+# Agora sim, vamos salvar o novo trem
+salvar_trem:
+sw $s1, 0($s3)
+sw $t2, 0($s4)
+sw $s2, 0($s6)
+
+# Salvar o status do trem
+status_trem:
+bgt $t8, $t2, salvar_status_atrasado
+la $s7, caminho
+sw $s7, 0($s5)
+j pos_status
+
+salvar_status_atrasado:
+la $s7, atrasado
+sw $s7, 0($s5)
+
+pos_status:
+# E, por fim, vamos somar 1 ao contador de trens
+addi $t9, $t9, 1
+jal bubblesort
+j menu
+
+# Esta função remove trens do vetor
+# É uma mistura do buscar trem + bubblesort
+remover_trem:
+jal buscar_trem
+# Trem
+sw $zero, 0($s3)
+# Destino
+sw $zero, 0($s6)
+# Horário
+li $t7, 9999
+sw $t7, 0($s4)
+# Status
+sw $zero, 0($s5)
+jal bubblesort
+subi $t9, $t9, 1
+j menu
+
+bubble_return:
+jr $ra
+
+# Bubblesort para reorganizar agora sem o trem removido
+bubblesort:
+# $t0 -> horario 1
+# $t1 -> horario 2
+# $t3 -> limite (for de fora)
+# $t4 -> contador (for de dentro)
+# $t5 -> limite (for de dentro, $t3 - 1)
+# $t6 -> aux
+# Para pegar o numero de trens cadastrados
+move $t3, $t9
+
+# For de fora
+outer_bubble:
+ble $t3, 1, bubble_return
+# Coloquei aqui dentro para poder resetar sempre que o for de dentro acabar
+la $s0, vetor_trens
+la $s1, vetor_horarios
+la $s2, vetor_status
+la $s3, vetor_destino
+li $t4, 0
+move $t5, $t3
+subi $t5, $t5, 1
+
+# For de dentro
+inner_bubble:
+lw $t0, 0($s1)
+# Para não fazer com que o ponteiro usado acabe ficando à frente dos outros
+move $s4, $s1
+# Pois eu preciso ver o próximo valor para comparar
+addi $s4, $s4, 4
+lw $t1, 0($s4)
+
+# Verificação do bubblesort
+ble $t0, $t1, iteracao_bubble
+# Se chegou nessa parte do código, então precisamos trocar de posição estes dois valores
+# Lembrando que precisamos trocar 4 valores de lugar
+# Vamos aproveitar que já temos os valores de horario nos registradores e vamos começar por eles
+move $t6, $t0
+move $t0, $t1
+move $t1, $t6
+sw $t0, 0($s1)
+sw $t1, 0($s4)
+
+# Agora, trens
+lw $t0, 0($s0)
+move $s4, $s0
+addi $s4, $s4, 4
+lw $t1, 0($s4)
+
+move $t6, $t0
+move $t0, $t1
+move $t1, $t6
+sw $t0, 0($s0)
+sw $t1, 0($s4)
+
+# Status
+lw $t0, 0($s2)
+move $s4, $s2
+addi $s4, $s4, 4
+lw $t1, 0($s4)
+
+move $t6, $t0
+move $t0, $t1
+move $t1, $t6
+sw $t0, 0($s2)
+sw $t1, 0($s4)
+
+# Por fim, destino
+lw $t0, 0($s3)
+move $s4, $s3
+addi $s4, $s4, 4
+lw $t1, 0($s4)
+
+move $t6, $t0
+move $t0, $t1
+move $t1, $t6
+sw $t0, 0($s3)
+sw $t1, 0($s4)
+
+# Função para dar um passo na iteração
+iteracao_bubble:
+addi $s0, $s0, 4
+addi $s1, $s1, 4
+addi $s2, $s2, 4
+addi $s3, $s3, 4
+addi $t4, $t4, 1
+blt $t4, $t5, inner_bubble
+subi $t3, $t3, 1
+j outer_bubble
+
+# Agora uma diferença do bubblesort de remoção
+# Após removermos o trem, vamos diminuir por 1 o número de trens
+# subi $t9, $t9, 1
+# j menu
+
+# Esta função irá listar todos os trens cadastrados
+listar_trens:
+# Vamos primeiro salvar as posições iniciais dos vetores
+la $s3, vetor_trens
+la $s4, vetor_horarios
+la $s5, vetor_status
+la $s6, vetor_destino
+# E criar um contador
+li $t0, 0
+
+# E imprimir a linha de cabeçalho
+li $v0, 4
+la $a0, titulo
+syscall
+
+# Agora vamos imprimir os trens, caso haja algum no indice sendo olhado
+loop_listar:
+lw $t1, 0($s4)
+beq $t1, 9999, prox_trem
+# Trem
+lw $a0, 0($s3)
+li $v0, 4
+syscall
+
+la $a0, tabLinha
+li $v0, 4
+syscall
+
+# Destino
+lw $a0, 0($s6)
+li $v0, 4
+syscall
+
+la $a0, tabLinha
+li $v0, 4
+syscall
+
+# Horário
+lw $t2, 0($s4)
+li $t3, 100
+div $t2, $t3
+mflo $t4
+mfhi $t5
+move $a0, $t4
+li $v0, 1
+syscall
+la $a0, doisPontos
+li $v0, 4
+syscall
+bgt $t5, 9, restoPrint
+move $a0, $zero
+li $v0, 1
+syscall
+
+# Separei para conseguir printar o zero antes do valor de minutos caso seja menor do que 10
+restoPrint:
+move $a0, $t5
+li $v0, 1
+syscall
+
+la $a0, tabLinha
+li $v0, 4
+syscall
+
+# Status
+lw $a0, 0($s5)
+li $v0, 4
+syscall
+
+la $a0, novLinha
+li $v0, 4
+syscall
+
+# Vamos procurar o próximo trem para imprimir, caso ele exista
+prox_trem:
+addi $t0, $t0, 1
+beq $t0, 10, menu
+addi $s3, $s3, 4
+addi $s4, $s4, 4
+addi $s5, $s5, 4
+addi $s6, $s6, 4
+j loop_listar
+
+# Uma função para encontrar as informações de um determinado trem de acordo com seu nome
+buscar_trem:
+# Vamos começar pelo malloc para lermos o nome do trem a ser procurado
+li $v0, 9
+li $a0, 5
+syscall
+
+move $s2, $v0
+
+li $v0, 4
+la $a0, codigo_trem
+syscall
+li $v0, 8
+move $a0, $s2
+li $a1, 5
+syscall
+# Agora, o nome do trem a ser procurado está salvo em $s2
+
+la $a0, novLinha
+li $v0, 4
+syscall
+
+# Vamos deixar um contador para o numero de trens
+li $t0, 0
+# E ler os vetores
+la $s3, vetor_trens
+la $s4, vetor_horarios
+la $s5, vetor_status
+la $s6, vetor_destino
+
+# Loop principal para buscar pelo trem na lista de trens
+busca_outer_loop:
+beq $t0, $t9, busca_nao_encontrado
+# Contador para comparar cada caractere
+li $t3, 0
+move $t7, $s2
+lw $t6, 0($s3)
+
+# O inner loop checa cada caractere
+busca_inner_loop:
+beq $t3, 4, busca_encontrado
+lb $t1, 0($t6)
+lb $t2, 0($t7)
+bne $t1, $t2, passo_iteracao_busca
+addi $t7, $t7, 1
+addi $t6, $t6, 1
+addi $t3, $t3, 1
+j busca_inner_loop
+
+# Função para dar um passo no outer loop
+passo_iteracao_busca:
+addi $t0, $t0, 1
+addi $s3, $s3, 4
+addi $s4, $s4, 4
+addi $s5, $s5, 4
+addi $s6, $s6, 4
+j busca_outer_loop
+
+# Se eu não encontrei o trem
+busca_nao_encontrado:
+la $a0, erro_busca_trem
+li $v0, 4
+syscall
+j menu
+
+# Se eu encontrei o trem
+busca_encontrado:
+jr $ra
+
+# Função para buscar todos os trens que vão para uma determinada cidade
+busca_cidade:
+# Vamos começar pelo malloc para lermos o nome da cidade a ser procurada
+li $v0, 9
+li $a0, 4
+syscall
+
+move $s2, $v0
+
+li $v0, 4
+la $a0, codigo_cidade
+syscall
+li $v0, 8
+move $a0, $s2
+li $a1, 4
+syscall
+# Agora, o nome da cidade a ser procurada está salvo em $s2
+
+la $a0, novLinha
+li $v0, 4
+syscall
+
+la $a0, titulo
+li $v0, 4
+syscall
+
+# Vamos deixar um contador para o numero de trens
+li $t0, 0
+# E ler os vetores
+la $s3, vetor_trens
+la $s4, vetor_horarios
+la $s5, vetor_status
+la $s6, vetor_destino
+
+# Loop principal para buscar pelo trem na lista de trens
+cidade_outer_loop:
+beq $t0, $t9, menu
+# Contador para comparar cada caractere
+li $t3, 0
+move $t7, $s2
+lw $t6, 0($s6)
+
+# O inner loop checa cada caractere
+cidade_inner_loop:
+beq $t3, 3, cidade_encontrado
+lb $t1, 0($t6)
+lb $t2, 0($t7)
+bne $t1, $t2, passo_iteracao_cidade
+addi $t7, $t7, 1
+addi $t6, $t6, 1
+addi $t3, $t3, 1
+j cidade_inner_loop
+
+# Função para dar um passo no outer loop
+passo_iteracao_cidade:
+addi $t0, $t0, 1
+addi $s3, $s3, 4
+addi $s4, $s4, 4
+addi $s5, $s5, 4
+addi $s6, $s6, 4
+j cidade_outer_loop
+
+# Caso eu encontre a cidade, preciso printar ela
+cidade_encontrado:
+# Preciso salvar estes registradores em outro lugar, pois o print_trem vai usar eles
+# Mas ainda vou precisar dos valores anteriores para continuar o loop
+move $s0, $t2
+move $s1, $t3
+move $a2, $t4
+move $a3, $t5
+jal print_trem
+move $t2, $s0
+move $t3, $s1
+move $t4, $a2
+move $t5, $a3
+j passo_iteracao_cidade
+
+# Função para verificar se a pessoa quer buscar por trem ou por cidade
+trem_ou_cidade:
+la $a0, escolha
+li $v0, 4
+syscall
+
+li $v0, 5
+syscall
+beq $v0, 1, encontrar_trem_especificado
+j busca_cidade
+
+# Função para encontrar um trem específico
+encontrar_trem_especificado:
+jal buscar_trem
+la $a0, titulo
+li $v0, 4
+syscall
+jal print_trem
+j menu
+
+# Função para printar as informações de um trem
+print_trem:
+# Trem
+lw $a0, 0($s3)
+li $v0, 4
+syscall
+
+la $a0, tabLinha
+li $v0, 4
+syscall
+
+# Destino
+lw $a0, 0($s6)
+li $v0, 4
+syscall
+
+la $a0, tabLinha
+li $v0, 4
+syscall
+
+# Horário
+lw $t2, 0($s4)
+li $t3, 100
+div $t2, $t3
+mflo $t4
+mfhi $t5
+move $a0, $t4
+li $v0, 1
+syscall
+la $a0, doisPontos
+li $v0, 4
+syscall
+bgt $t5, 9, restoPrint
+move $a0, $zero
+li $v0, 1
+syscall
+
+# Separei para conseguir printar o zero antes do valor de minutos caso seja menor do que 10
+restoPrintBusca:
+move $a0, $t5
+li $v0, 1
+syscall
+
+la $a0, tabLinha
+li $v0, 4
+syscall
+
+# Status
+lw $a0, 0($s5)
+li $v0, 4
+syscall
+
+la $a0, novLinha
+li $v0, 4
+syscall
+jr $ra
+
+# Esta função marca a chegada de um trem.
+chegada_trem:
+jal buscar_trem
+la $a0, chegou
+sw $a0, 0($s5)
+j menu
+
+# Imprime a lista de comandos possíveis
+imprime_comandos:
+la $a0, ajuda
+li $v0, 4
+syscall
+j menu
+
+# Main irá settar as variáveis necessárias. Depois disso, segue automaticamente para menu
+main:
+# $t0-$t5 são usados pelas funções do programa, portanto, não podem conter variáveis globais
+# $t8 será o horário atual
+# $t9 será o contador do numero de trens
+li $v0, 4
+la $a0, horario
+syscall
+li $v0, 5
+syscall
+move $t8, $v0
+
+# Vamos verificar se o horário é válido
+# Vou separar horas em $t4 e minutos em $t5
+li $t3, 100
+div $t8, $t3
+mflo $t4
+mfhi $t5
+
+bgt $t4, 23, erro_horario_atual
+blt $t4, 0, erro_horario_atual
+bgt $t5, 59, erro_horario_atual
+blt $t5, 0, erro_horario_atual
+
+li $t9, 0
+
+# Menu irá imprimir a mensagem de comando e ler o input dado pelo usuário
+menu:
+# Imprimir mensagem de comando
+la $a0, comando
+li $v0, 4
+syscall
+
+# Ler input de usuário
+li $v0, 5
+syscall
+
+# Comparações que enviam para a função correta
+# 0 -> Lista de comandos do programa
+beq $v0, 0, imprime_comandos
+# 1 -> Adicionar trem ao vetor
+beq $v0, 1, adicionar_trem
+# 2 -> Remover trem
+beq $v0, 2, remover_trem
+# 3 -> Listar trens
+beq $v0, 3, listar_trens
+# 4 -> Buscar trem
+beq $v0, 4, trem_ou_cidade
+# 5 -> Marcar chegada do trem
+beq $v0, 5, chegada_trem
+# 9 -> Encerra o programa
+beq $v0, 9, encerrar
+
+# Caso não entre em nenhum dos beq acima, temos um comando inválido
+# Imprimir que o comando é inválido e voltar para o começo da main
+la $a0, erro_comando
+li $v0, 4
+syscall
+j menu
