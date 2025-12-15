@@ -19,6 +19,7 @@ erro_codigo_trem: .asciiz "Codigo de trem invalido!\n"
 erro_horario_trem: .asciiz "Horario invalido!\n"
 erro_destino: .asciiz "Codigo de destino invalido!\n"
 erro_busca_trem: .asciiz "Trem nao encontrado!\n"
+erro_vetor_cheio: .asciiz "Lista de trens cheia!\n"
 
 # Vetor de ponteiros para as strings de nomes dos trens
 vetor_trens: .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -69,8 +70,15 @@ li $v0, 4
 syscall
 j menu
 
+erro_lista_cheia:
+la $a0, erro_vetor_cheio
+li $v0, 4
+syscall
+j menu
+
 # Adiciona um trem ao vetor
 adicionar_trem:
+beq $t9, 10, erro_lista_cheia
 # Primeiro vamos fazer o equivalente a um malloc
 li $v0, 9
 # Os códigos vão ter 1 letra e 3 números, portanto, buffer de tamanho 5 (n - 1)
