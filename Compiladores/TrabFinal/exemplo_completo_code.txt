@@ -1,0 +1,32 @@
+
+func soma:
+t1 = a + b
+resultado = t1
+return resultado
+end func soma
+
+func main:
+i = 0
+total = 0
+label L1
+t2 = i < 10
+if_false t2 goto L2
+param total
+param i
+t3 = call soma, 2
+total = t3
+t4 = i + 1
+i = t4
+goto L1
+label L2
+t5 = total > 20
+if_false t5 goto L3
+t6 = total - 1
+total = t6
+goto L4
+label L3
+t7 = total + 1
+total = t7
+label L4
+return
+end func main
