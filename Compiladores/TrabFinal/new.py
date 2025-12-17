@@ -6,9 +6,7 @@ from graphviz import Digraph
 # Flag para interromper a execução se tiver erro semantico
 SEMANTIC_ERROR = False
 
-# ==========================================
-# 1. ESTRUTURA DA AST (Nós da Árvore)
-# ==========================================
+# AST
 
 class Node:
     def __init__(self, type, children=None, leaf=None, lineno=None):
@@ -21,9 +19,7 @@ class Node:
     def __repr__(self):
         return f"<{self.type}>"
 
-# ==========================================
-# 2. VISUALIZADOR (Graphviz)
-# ==========================================
+# Graphviz
 
 class ASTVisualizer:
     def __init__(self, ast):
@@ -59,9 +55,7 @@ class ASTVisualizer:
                 self.dot.edge(node_id, child_id)
                 self._visit(child)
 
-# ==========================================
-# 3. SCANNER (Analisador Léxico)
-# ==========================================
+# Lex
 
 reserved = {
     'if': 'IF', 'else': 'ELSE', 'while': 'WHILE', 'return': 'RETURN',
@@ -120,9 +114,7 @@ def t_error(t):
 
 lexer = lex.lex()
 
-# ==========================================
-# 4. PARSER (Analisador Sintático)
-# ==========================================
+# Sintatico
 
 precedence = (
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
@@ -332,9 +324,7 @@ def p_error(p):
 
 parser = yacc.yacc()
 
-# ==========================================
-# 5. TABELA DE SÍMBOLOS & SEMÂNTICA
-# ==========================================
+# Semantica + Tabela de simbolos
 
 class SymbolTable:
     def __init__(self):
@@ -416,9 +406,7 @@ def semantic_analyze(node, symtab):
     for child in node.children:
         semantic_analyze(child, symtab)
 
-# ==========================================
-# 6. GERADOR DE CÓDIGO INTERMEDIÁRIO
-# ==========================================
+# Codigo de 3 enderecos
 
 class CodeGen:
     def __init__(self):
@@ -503,9 +491,7 @@ class CodeGen:
                 self.gen(child)
         return ""
 
-# ==========================================
-# 7. EXECUÇÃO PRINCIPAL
-# ==========================================
+# Main
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
