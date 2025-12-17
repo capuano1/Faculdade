@@ -1,4 +1,4 @@
-=== TABELA DE S√çMBOLOS ===
+=== TABELA DE SÕMBOLOS ===
 NOME            | TIPO       | CATEGORIA  | ESCOPO    
 -------------------------------------------------------
 input           | int        | func       | Global    
@@ -12,4 +12,3 @@ resultado       | int        | var        | Local 1
 main            | void       | func       | Global    
 i               | int        | var        | Local 1   
 total           | int        | var        | Local 1   
-
